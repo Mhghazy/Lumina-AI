@@ -1,0 +1,10 @@
+.env
+.env.*
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+.vscode/
+.bolt/

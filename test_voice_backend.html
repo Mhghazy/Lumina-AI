@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Voice Backend</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .response {
+            background: #333;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+
+        .error {
+            color: #ff6b6b;
+        }
+
+        .success {
+            color: #51cf66;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 Lumina Backend Test</h1>
+
+    <div class="test-section">
+        <h2>Test 1: Simple Hello Message</h2>
+        <button onclick="testHello()">Send "Hello"</button>
+        <div id="hello-response" class="response"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Emotion Detection (Coughing)</h2>
+        <button onclick="testCoughing()">Send "coughing sound"</button>
+        <div id="coughing-response" class="response"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Database Search</h2>
+        <button onclick="testSearch()">Search for vendors</button>
+        <div id="search-response" class="response"></div>
+    </div>
+
+    <script>
+        const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:5000/api/chat'
+            : '/api/chat';
+
+        async function testHello() {
+            const responseDiv = document.getElementById('hello-response');
+            responseDiv.innerHTML = '⏳ Sending request...';
+
+            try {
+                console.log('Sending hello to backend...');
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'Hello',
+                        conversation_id: null
+                    })
+                });
+
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.success) {
+                    responseDiv.innerHTML = `<span class="success">✅ SUCCESS</span>\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    responseDiv.innerHTML = `<span class="error">❌ FAILED</span>\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                responseDiv.innerHTML = `<span class="error">❌ ERROR</span>\n\n${error.message}`;
+            }
+        }
+
+        async function testCoughing() {
+            const responseDiv = document.getElementById('coughing-response');
+            responseDiv.innerHTML = '⏳ Sending request...';
+
+            try {
+                console.log('Sending coughing sound to backend...');
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'coughing sound',
+                        conversation_id: null
+                    })
+                });
+
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.success) {
+                    responseDiv.innerHTML = `<span class="success">✅ SUCCESS</span>\n\nEmotion: ${data.emotion_detected || 'none'}\nPriority: ${data.emotion_priority || 'none'}\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    responseDiv.innerHTML = `<span class="error">❌ FAILED</span>\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                responseDiv.innerHTML = `<span class="error">❌ ERROR</span>\n\n${error.message}`;
+            }
+        }
+
+        async function testSearch() {
+            const responseDiv = document.getElementById('search-response');
+            responseDiv.innerHTML = '⏳ Sending request...';
+
+            try {
+                console.log('Sending search query to backend...');
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'show me all vendors',
+                        conversation_id: null
+                    })
+                });
+
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.success) {
+                    responseDiv.innerHTML = `<span class="success">✅ SUCCESS</span>\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    responseDiv.innerHTML = `<span class="error">❌ FAILED</span>\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                responseDiv.innerHTML = `<span class="error">❌ ERROR</span>\n\n${error.message}`;
+            }
+        }
+    </script>
+</body>
+
+</html>

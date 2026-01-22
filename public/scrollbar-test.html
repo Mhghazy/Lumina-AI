@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fixed Scrollbar Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      padding-bottom: 80px;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 98%;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .info {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      border-left: 4px solid #2196f3;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 3000px; /* Extra wide to force horizontal scroll */
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #2196f3;
+      color: white;
+      font-weight: bold;
+    }
+
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+
+    /* Fixed scrollbar at bottom */
+    .fixed-scrollbar {
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      height: 40px;
+      background: #2c3e50;
+      overflow-x: auto;
+      overflow-y: hidden;
+      z-index: 9999 !important;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+      display: block !important;
+      visibility: visible !important;
+      transform: translateZ(0);
+    }
+
+    .fixed-scrollbar::-webkit-scrollbar {
+      height: 16px;
+    }
+
+    .fixed-scrollbar::-webkit-scrollbar-track {
+      background: #34495e;
+    }
+
+    .fixed-scrollbar::-webkit-scrollbar-thumb {
+      background: #3498db;
+      border-radius: 8px;
+      border: 2px solid #34495e;
+    }
+
+    .fixed-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #5dade2;
+    }
+
+    .fixed-scrollbar-content {
+      height: 1px;
+      background: transparent;
+      width: 3000px;
+      pointer-events: none;
+    }
+
+    .status {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #4caf50;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-weight: bold;
+      z-index: 10000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .test-buttons {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #1976d2;
+    }
+
+    .log {
+      background: #263238;
+      color: #aed581;
+      padding: 15px;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+
+    .log div {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="status" id="status">✅ Scrollbar Active</div>
+
+  <div class="container">
+    <h1>🔍 Fixed Scrollbar Test</h1>
+    
+    <div class="info">
+      <strong>📋 Test Instructions:</strong>
+      <ul style="margin-top: 10px; margin-left: 20px;">
+        <li>The table below is 3000px wide (wider than viewport)</li>
+        <li>A fixed scrollbar should appear at the <strong>bottom of your screen</strong></li>
+        <li>Scroll the table horizontally - the bottom scrollbar should sync</li>
+        <li>Scroll the bottom scrollbar - the table should sync</li>
+        <li>Check the console log below for debug information</li>
+      </ul>
+    </div>
+
+    <div class="test-buttons">
+      <button onclick="testScrollbar()">🧪 Run Scrollbar Test</button>
+      <button onclick="toggleScrollbar()">👁️ Toggle Scrollbar</button>
+      <button onclick="clearLog()">🗑️ Clear Log</button>
+    </div>
+
+    <h2>Wide Table (3000px)</h2>
+    <div class="table-wrapper" id="tableWrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Column 1</th>
+            <th>Column 2</th>
+            <th>Column 3</th>
+            <th>Column 4</th>
+            <th>Column 5</th>
+            <th>Column 6</th>
+            <th>Column 7</th>
+            <th>Column 8</th>
+            <th>Column 9</th>
+            <th>Column 10</th>
+            <th>Column 11</th>
+            <th>Column 12</th>
+            <th>Column 13</th>
+            <th>Column 14</th>
+            <th>Column 15</th>
+            <th>Column 16</th>
+            <th>Column 17</th>
+            <th>Column 18</th>
+            <th>Column 19</th>
+            <th>Column 20</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- Rows will be generated by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- Fixed scrollbar OUTSIDE container -->
+  <div class="fixed-scrollbar" id="fixedScrollbar">
+    <div class="fixed-scrollbar-content" id="fixedScrollbarContent"></div>
+  </div>
+
+  <script>
+    const log = document.getElementById('log');
+    const tableWrapper = document.getElementById('tableWrapper');
+    const tableBody = document.getElementById('tableBody');
+    const fixedScrollbar = document.getElementById('fixedScrollbar');
+    const fixedScrollbarContent = document.getElementById('fixedScrollbarContent');
+    const status = document.getElementById('status');
+
+    function addLog(message, type = 'info') {
+      const div = document.createElement('div');
+      const timestamp = new Date().toLocaleTimeString();
+      const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+      div.innerHTML = `<strong>[${timestamp}]</strong> ${icon} ${message}`;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function clearLog() {
+      log.innerHTML = '';
+      addLog('Log cleared');
+    }
+
+    function testScrollbar() {
+      addLog('Running scrollbar test...', 'info');
+      
+      const scrollbarStyle = window.getComputedStyle(fixedScrollbar);
+      const tests = [
+        { name: 'Element exists', pass: !!fixedScrollbar },
+        { name: 'Position is fixed', pass: scrollbarStyle.position === 'fixed' },
+        { name: 'Bottom is 0', pass: scrollbarStyle.bottom === '0px' },
+        { name: 'Z-index is high', pass: parseInt(scrollbarStyle.zIndex) > 1000 },
+        { name: 'Display is block', pass: scrollbarStyle.display === 'block' },
+        { name: 'Visibility is visible', pass: scrollbarStyle.visibility === 'visible' },
+        { name: 'Width is 100%', pass: fixedScrollbar.offsetWidth === window.innerWidth }
+      ];
+
+      tests.forEach(test => {
+        if (test.pass) {
+          addLog(`${test.name}: PASS`, 'success');
+        } else {
+          addLog(`${test.name}: FAIL`, 'error');
+        }
+      });
+
+      const passCount = tests.filter(t => t.pass).length;
+      const total = tests.length;
+      
+      if (passCount === total) {
+        addLog(`All tests passed! (${passCount}/${total})`, 'success');
+        status.textContent = '✅ All Tests Passed';
+        status.style.background = '#4caf50';
+      } else {
+        addLog(`Some tests failed (${passCount}/${total})`, 'error');
+        status.textContent = `⚠️ ${total - passCount} Tests Failed`;
+        status.style.background = '#f44336';
+      }
+    }
+
+    function toggleScrollbar() {
+      if (fixedScrollbar.style.display === 'none') {
+        fixedScrollbar.style.display = 'block';
+        addLog('Scrollbar shown', 'success');
+      } else {
+        fixedScrollbar.style.display = 'none';
+        addLog('Scrollbar hidden', 'warning');
+      }
+    }
+
+    // Generate table rows
+    for (let i = 1; i <= 20; i++) {
+      const tr = document.createElement('tr');
+      for (let j = 1; j <= 20; j++) {
+        const td = document.createElement('td');
+        td.textContent = `Row ${i}, Col ${j}`;
+        tr.appendChild(td);
+      }
+      tableBody.appendChild(tr);
+    }
+
+    // Sync scrolling
+    tableWrapper.addEventListener('scroll', () => {
+      fixedScrollbar.scrollLeft = tableWrapper.scrollLeft;
+      addLog(`Table scroll: ${tableWrapper.scrollLeft}px`);
+    }, { passive: true });
+
+    fixedScrollbar.addEventListener('scroll', () => {
+      tableWrapper.scrollLeft = fixedScrollbar.scrollLeft;
+      addLog(`Scrollbar scroll: ${fixedScrollbar.scrollLeft}px`);
+    }, { passive: true });
+
+    // Initialize
+    addLog('Page loaded', 'success');
+    addLog(`Viewport width: ${window.innerWidth}px`);
+    addLog(`Table width: ${tableWrapper.scrollWidth}px`);
+    addLog(`Scrollbar element: ${fixedScrollbar ? 'Found' : 'Not found'}`, fixedScrollbar ? 'success' : 'error');
+    
+    setTimeout(() => {
+      testScrollbar();
+    }, 500);
+  </script>
+</body>
+</html>

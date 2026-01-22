@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="I.T.S-Group Database Management - Advanced platform for vendors, clients, and insights">
+  <meta name="theme-color" content="#1e3c72">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <title>I.T.S-Group Database | Management Platform</title>
+  <link rel="stylesheet" href="css/utilities.css">
+  <style>
+    /* ===== Performance-Optimized Styles ===== */
+    body {
+      font-family: var(--font-family-base);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e8ba3 100%);
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
+      padding: clamp(1rem, 3vw, 2rem);
+      overflow: hidden;
+      will-change: background-position;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .container {
+      text-align: center;
+      animation: fadeInScale 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      z-index: 10;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: scale(0.95) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* ===== Logo Component ===== */
+    .logo-container {
+      margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+      animation: logoFloat 3s ease-in-out infinite;
+      cursor: pointer;
+      position: relative;
+      width: min-content;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .logo-container::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 120%;
+      height: 120%;
+      background: radial-gradient(circle, 
+        rgba(100,200,255,0.5) 0%, 
+        rgba(100,200,255,0.25) 40%,
+        transparent 70%);
+      border-radius: 50%;
+      transform: translate(-50%, -50%) scale(1.4);
+      opacity: 0.8;
+      pointer-events: none;
+      z-index: -1;
+      animation: constantGlow 3s ease-in-out infinite;
+      filter: blur(clamp(15px, 2vw, 25px));
+      will-change: transform, opacity;
+    }
+
+    .logo-container:hover::before {
+      animation: hoverGlow 1.2s ease-in-out infinite;
+      filter: blur(clamp(25px, 3vw, 35px));
+    }
+
+    @keyframes constantGlow {
+      0%, 100% {
+        transform: translate(-50%, -50%) scale(1.4);
+        opacity: 0.7;
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(1.6);
+        opacity: 0.95;
+      }
+    }
+
+    @keyframes hoverGlow {
+      0%, 100% {
+        transform: translate(-50%, -50%) scale(2.2);
+        opacity: 1;
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(2.5);
+        opacity: 0.95;
+      }
+    }
+
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-3px) rotate(1deg); }
+      50% { transform: translateY(-8px) rotate(0deg); }
+      75% { transform: translateY(-3px) rotate(-1deg); }
+    }
+
+    .logo-container img {
+      max-width: min(200px, 40vw);
+      height: auto;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3))
+              drop-shadow(0 0 35px rgba(100,200,255,0.6));
+      transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      position: relative;
+      z-index: 2;
+      animation: logoGlowPulse 3s ease-in-out infinite;
+      will-change: filter;
+    }
+
+    @keyframes logoGlowPulse {
+      0%, 100% {
+        filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3))
+                drop-shadow(0 0 35px rgba(100,200,255,0.6));
+      }
+      50% {
+        filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3))
+                drop-shadow(0 0 50px rgba(100,200,255,0.9))
+                drop-shadow(0 0 70px rgba(100,200,255,0.5));
+      }
+    }
+
+    .logo-container:hover img {
+      filter: drop-shadow(0 15px 35px rgba(100,200,255,0.9))
+              drop-shadow(0 0 60px rgba(100,200,255,1))
+              drop-shadow(0 0 90px rgba(255,255,255,0.7))
+              drop-shadow(0 5px 15px rgba(0,0,0,0.3));
+      animation: logoHoverFloat 2s ease-in-out infinite;
+    }
+
+    @keyframes logoHoverFloat {
+      0%, 100% { transform: scale(1.15) rotate(5deg) translateY(0); }
+      25% { transform: scale(1.17) rotate(7deg) translateY(-5px); }
+      50% { transform: scale(1.15) rotate(5deg) translateY(-8px); }
+      75% { transform: scale(1.17) rotate(3deg) translateY(-5px); }
+    }
+
+    /* ===== Typography ===== */
+    h1 {
+      margin-bottom: clamp(1rem, 3vw, 1.5rem);
+      color: white;
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+      animation: slideDown 0.8s ease;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.95);
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      margin-bottom: clamp(2rem, 5vw, 3rem);
+      animation: fadeIn 1.5s ease;
+      font-weight: 400;
+    }
+
+    /* ===== Button System ===== */
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(1rem, 3vw, 1.5rem);
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    button {
+      background: white;
+      color: #1e3c72;
+      padding: clamp(0.875rem, 2.5vw, 1.125rem) clamp(1.5rem, 4vw, 2.5rem);
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-size: clamp(0.875rem, 2vw, 1.125rem);
+      font-weight: 600;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+      position: relative;
+      overflow: hidden;
+      animation: buttonAppear 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) backwards;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      will-change: transform;
+    }
+
+    button:nth-child(1) { animation-delay: 0.1s; }
+    button:nth-child(2) { animation-delay: 0.2s; }
+    button:nth-child(3) { animation-delay: 0.3s; }
+    button:nth-child(4) { animation-delay: 0.4s; }
+
+    @keyframes buttonAppear {
+      from { opacity: 0; transform: translateX(-30px) scale(0.9); }
+      to { opacity: 1; transform: translateX(0) scale(1); }
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(30, 60, 114, 0.15);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s ease, height 0.6s ease;
+      will-change: width, height;
+    }
+
+    button:hover::before,
+    button:focus::before {
+      width: 400px;
+      height: 400px;
+    }
+
+    button:hover,
+    button:focus {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+      color: #2a5298;
+    }
+
+    button:active {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .icon {
+      font-size: clamp(1.25rem, 3vw, 1.5rem);
+      margin-right: 0.625rem;
+      display: inline-block;
+      transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      will-change: transform;
+    }
+
+    button:hover .icon,
+    button:focus .icon {
+      transform: scale(1.2) rotate(10deg);
+    }
+
+    /* ===== Particles System ===== */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      width: clamp(6px, 1vw, 10px);
+      height: clamp(6px, 1vw, 10px);
+      background: white;
+      border-radius: 50%;
+      opacity: 0.3;
+      animation: floatParticle 15s infinite ease-in-out;
+      will-change: transform;
+    }
+
+    @keyframes floatParticle {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      25% { transform: translate3d(100px, -100px, 0); }
+      50% { transform: translate3d(-100px, -200px, 0); }
+      75% { transform: translate3d(100px, -100px, 0); }
+    }
+
+    /* ===== Footer ===== */
+    .footer {
+      margin-top: clamp(2rem, 5vw, 3.5rem);
+      color: rgba(255,255,255,0.8);
+      font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+      animation: fadeIn 2s ease;
+      font-weight: 400;
+    }
+
+    /* ===== Responsive Design ===== */
+    @media (min-width: 768px) {
+      .button-container {
+        max-width: 400px;
+      }
+    }
+
+    @media (max-width: 767px) {
+      body {
+        padding: 1rem;
+      }
+
+      .logo-container img {
+        max-width: 150px;
+      }
+
+      button {
+        padding: 0.875rem 1.5rem;
+        font-size: 0.9375rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .subtitle {
+        font-size: 0.9375rem;
+      }
+
+      button {
+        font-size: 0.875rem;
+        padding: 0.75rem 1.25rem;
+      }
+    }
+
+    /* ===== Focus Styles for Accessibility ===== */
+    button:focus-visible {
+      outline: 3px solid rgba(255, 255, 255, 0.8);
+      outline-offset: 3px;
+    }
+
+    /* ===== Reduced Motion Support ===== */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="particles" id="particles" aria-hidden="true"></div>
+  
+  <main class="container" role="main">
+    <div class="logo-container" id="logoContainer" tabindex="0" role="button" aria-label="Logo animation trigger">
+      <img src="logo.png" alt="I.T.S-Group Logo" loading="lazy" width="200" height="200">
+    </div>
+
+    <h1>I.T.S-Group Database</h1>
+    <p class="subtitle">Choose Your Database</p>
+
+    <nav class="button-container" role="navigation" aria-label="Main navigation">
+      <button onclick="AppUI.navigate('vendors.html')" aria-label="Navigate to Vendors Database">
+        <span class="icon" aria-hidden="true">📦</span>
+        Vendors Database
+      </button>
+      <button onclick="AppUI.navigate('hot_vendors.html')" aria-label="Navigate to Hot Vendors Database">
+        <span class="icon" aria-hidden="true">🔥</span>
+        Hot Vendors Database
+      </button>
+      <button onclick="AppUI.navigate('clients.html')" aria-label="Navigate to Clients Database">
+        <span class="icon" aria-hidden="true">👥</span>
+        Clients Database
+      </button>
+      <button onclick="AppUI.navigate('insights.html')" aria-label="Navigate to Client Insights">
+        <span class="icon" aria-hidden="true">📊</span>
+        Client Insights
+      </button>
+    </nav>
+
+    <footer class="footer" role="contentinfo">
+      &copy; 2025 I.T.S-Group | Advanced Database Solutions
+    </footer>
+  </main>
+
+  <!-- Scripts -->
+  <script src="js/core.js" defer></script>
+  <script>
+    /**
+     * Application UI Controller - Clean OOP Implementation
+     */
+    class AppUI {
+      static instance = null;
+
+      constructor() {
+        if (AppUI.instance) return AppUI.instance;
+        
+        this.domCache = new Map();
+        this.isNavigating = false;
+        this.particleSystem = null;
+        
+        AppUI.instance = this;
+        this.init();
+      }
+
+      static getInstance() {
+        if (!AppUI.instance) {
+          AppUI.instance = new AppUI();
+        }
+        return AppUI.instance;
+      }
+
+      init() {
+        this.setupDOM();
+        this.setupEventListeners();
+        this.initializeParticles();
+        this.setupKeyboardNav();
+        this.setupAccessibility();
+      }
+
+      setupDOM() {
+        // Cache DOM elements
+        this.domCache.set('particlesContainer', document.getElementById('particles'));
+        this.domCache.set('logoContainer', document.getElementById('logoContainer'));
+        this.domCache.set('container', document.querySelector('.container'));
+      }
+
+      setupEventListeners() {
+        const logoContainer = this.domCache.get('logoContainer');
+        
+        // Click/Enter on logo
+        logoContainer.addEventListener('click', () => this.handleLogoInteraction());
+        logoContainer.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            this.handleLogoInteraction();
+          }
+        });
+      }
+
+      handleLogoInteraction() {
+        // Logo click handled - could add effects here
+        console.log('Logo interaction');
+      }
+
+      initializeParticles() {
+        const container = this.domCache.get('particlesContainer');
+        if (!container) return;
+
+        // Use DocumentFragment for better performance
+        const fragment = document.createDocumentFragment();
+        const particleCount = window.innerWidth < 768 ? 10 : 20;
+        
+        for (let i = 0; i < particleCount; i++) {
+          const particle = document.createElement('div');
+          particle.className = 'particle';
+          particle.style.left = `${Math.random() * 100}%`;
+          particle.style.top = `${Math.random() * 100}%`;
+          particle.style.animationDelay = `${Math.random() * 15}s`;
+          particle.style.animationDuration = `${Math.random() * 10 + 10}s`;
+          fragment.appendChild(particle);
+        }
+        
+        container.appendChild(fragment);
+      }
+
+      setupKeyboardNav() {
+        const navMap = {
+          '1': 'vendors.html',
+          '2': 'hot_vendors.html',
+          '3': 'clients.html',
+          '4': 'insights.html'
+        };
+
+        document.addEventListener('keydown', (e) => {
+          if (navMap[e.key] && !this.isNavigating) {
+            this.navigate(navMap[e.key]);
+          }
+        });
+      }
+
+      setupAccessibility() {
+        // Add skip link for screen readers
+        const skipLink = document.createElement('a');
+        skipLink.href = '#main';
+        skipLink.className = 'sr-only';
+        skipLink.textContent = 'Skip to main content';
+        document.body.prepend(skipLink);
+      }
+
+      static navigate(page) {
+        const instance = AppUI.getInstance();
+        instance.performNavigation(page);
+      }
+
+      performNavigation(page) {
+        if (this.isNavigating) return;
+        
+        this.isNavigating = true;
+        const container = this.domCache.get('container');
+        
+        // Add exit animation
+        container.style.animation = 'fadeOut 0.5s ease forwards';
+        
+        // Navigate after animation
+        setTimeout(() => {
+          window.location.href = page;
+        }, 500);
+      }
+    }
+
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        new AppUI();
+      });
+    } else {
+      new AppUI();
+    }
+
+    // Make navigate method globally accessible
+    window.AppUI = AppUI;
+  </script>
+</body>
+</html>
