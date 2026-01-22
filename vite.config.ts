@@ -12,5 +12,15 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        all_suppliers: 'all_suppliers.html',
+        clients: 'clients.html',
+        color_preview: 'color-preview.html',
+        hot_vendors: 'hot_vendors.html',
+        settings: 'settings.html',
+      },
+    },
   },
 });
