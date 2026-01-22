@@ -360,17 +360,7 @@
     }
 
     /* Hide the default scrollbar but keep functionality */
-    .table-scroll::-webkit-scrollbar {
-      height: 0;
-      display: none;
-    }
-
-    .table-scroll {
-      scrollbar-width: none;
-      /* Firefox */
-      -ms-overflow-style: none;
-      /* IE and Edge */
-    }
+    /* REMOVED to show scrollbar on mobile */
 
     /* Large vertical scrollbar - only on body */
     body::-webkit-scrollbar {
@@ -1284,7 +1274,7 @@
     /* Charts Section */
     .charts-section {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 25px;
       margin-bottom: 30px;
     }
