@@ -1,17 +1,14 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  optimizeDeps: {
-    exclude: ['lucide-react'],
-  },
+  plugins: [],
+  base: '/Database008/',
   // Serve public/index.html as the main entry
   root: './public',
-  publicDir: '../public-assets',
+  publicDir: false, // public folder is already the root
   build: {
     outDir: '../dist',
+    emptyOutDir: true,
   },
 });
