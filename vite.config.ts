@@ -4,11 +4,13 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   plugins: [],
   base: '/Database008/',
-  // Serve public/index.html as the main entry
-  root: './public',
-  publicDir: false, // public folder is already the root
+  // Root is default (current directory)
+  // root: './public', // REMOVED
+
+  // publicDir defaults to "public", which is correct now.
+
   build: {
-    outDir: '../dist',
+    outDir: 'dist',
     emptyOutDir: true,
   },
 });
