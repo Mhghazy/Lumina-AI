@@ -2253,7 +2253,7 @@
       </div>
 
       <div class="login-footer">
-        © 2025 I.T.S-Group | Secure Access
+        © 2026 I.T.S-Group | Powered by Advanced Database Solutions
       </div>
     </div>
   </div>
@@ -3794,17 +3794,23 @@
       const bubble = document.createElement('div');
       bubble.className = 'bubble rising';
 
-      const size = Math.random() * 40 + 25;
+      // Enhanced random properties
+      const size = Math.random() * 40 + 20; // Range 20px to 60px
       const startX = Math.random() * window.innerWidth;
-      const drift = (Math.random() - 0.5) * 300;
-      const duration = Math.random() * 5 + 8;
+      const drift = (Math.random() - 0.5) * 350; // Wider drift
+      const duration = Math.random() * 6 + 7; // Slower, more calming
 
       bubble.style.width = size + 'px';
       bubble.style.height = size + 'px';
       bubble.style.left = startX + 'px';
-      bubble.style.bottom = '-50px';
+      bubble.style.bottom = '-60px';
       bubble.style.setProperty('--drift', drift + 'px');
       bubble.style.animationDuration = duration + 's';
+
+      // Visual enhancements
+      const hue = Math.random() * 50 - 25; // Subtle color shift (cyan/blue variations)
+      bubble.style.filter = `hue-rotate(${hue}deg) drop-shadow(0 0 5px rgba(255,255,255,0.3))`;
+      bubble.style.opacity = Math.random() * 0.3 + 0.5; // vary transparency
 
       // Add click event to pop the bubble
       bubble.addEventListener('click', function (e) {
