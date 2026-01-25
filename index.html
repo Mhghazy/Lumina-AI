@@ -1563,42 +1563,61 @@
     }
 
     @media (max-width: 768px) {
+
+      /* Block scrolling globally on mobile */
+      html,
+      body {
+        overflow: hidden !important;
+        position: fixed !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+
       .top-bar {
-        padding: 0 15px;
-        height: 55px;
+        padding: 0 10px;
+        height: 50px;
       }
 
       .top-bar-title {
         display: none;
       }
 
+      /* Content Sizing to Fit Screen */
+      .logo-container img {
+        max-width: 110px;
+        /* Smaller logo */
+        margin-top: 10px;
+      }
+
       h1 {
-        font-size: 1.8em;
+        font-size: 1.5em;
+        margin-bottom: 10px;
+      }
+
+      .subtitle {
+        margin-bottom: 25px;
+        font-size: 1em;
       }
 
       button {
-        padding: 15px 30px;
-        font-size: 16px;
+        padding: 12px 25px;
+        /* Compact buttons */
+        font-size: 15px;
       }
 
-      .logo-container img {
-        max-width: 150px;
-      }
-
-      /* Compact Header for Mobile */
+      /* Compact Header */
       .user-name {
         display: none !important;
       }
 
       .signout-btn {
-        font-size: 0 !important;
-        /* Hide "Sign Out" text */
-        padding: 8px 12px !important;
+        font-size: 13px !important;
+        /* Restore text, smaller size */
+        padding: 6px 12px !important;
       }
 
       .signout-btn span {
         font-size: 16px !important;
-        /* Keep icon visible */
       }
 
       .top-bar-right {
@@ -1606,15 +1625,18 @@
       }
 
       .user-info {
-        padding: 5px !important;
-        /* Smaller user badge */
+        padding: 4px 8px !important;
         background: transparent !important;
-        /* Cleaner look */
       }
 
-      /* Fix UI Margins and Padding */
+      .settings-btn {
+        display: none !important;
+        /* Save space */
+      }
+
+      /* Layout Containers */
       .login-container {
-        padding: 25px !important;
+        padding: 20px !important;
         width: 90% !important;
         max-width: 90% !important;
         margin: 0 auto;
@@ -1622,13 +1644,28 @@
 
       .button-container {
         width: 100% !important;
-        padding: 0 15px;
+        padding: 0 20px;
         box-sizing: border-box;
       }
 
       .button-container button {
         width: 100%;
         margin-bottom: 10px;
+      }
+
+      /* Pin Footer */
+      .footer {
+        position: fixed;
+        bottom: 15px;
+        width: 100%;
+        left: 0;
+        margin: 0;
+        font-size: 11px;
+      }
+
+      .main-content {
+        justify-content: center;
+        padding-top: 40px;
       }
     }
 
