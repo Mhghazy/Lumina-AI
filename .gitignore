@@ -11,3 +11,7 @@ venv.bak/
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Auto-generated local data
+audio_cache/
+chats/
