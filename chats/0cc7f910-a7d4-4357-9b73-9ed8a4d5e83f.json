@@ -1,0 +1,37 @@
+{
+  "id": "0cc7f910-a7d4-4357-9b73-9ed8a4d5e83f",
+  "title": "[{'text': 'howday', 'type': 't...",
+  "updated_at": "2026-05-17 18:10",
+  "history": [
+    {
+      "role": "user",
+      "metadata": null,
+      "content": [
+        {
+          "text": "howday",
+          "type": "text"
+        }
+      ],
+      "options": null
+    },
+    {
+      "role": "assistant",
+      "metadata": null,
+      "content": [
+        {
+          "text": "*murmurs incoherently, twitching* 🤯... Glittering skyscrapers made of pure light💫 dance in the sky, refracting rainbows on the water 🌊... Their echoes whisper, \"Howdy?\"... *gulps, suddenly jolting awake*  H-hi?... *yawns, still disoriented, but now gradually powering up* 😊",
+          "type": "text"
+        }
+      ],
+      "options": null
+    },
+    {
+      "role": "user",
+      "content": "howady"
+    },
+    {
+      "role": "assistant",
+      "content": "😊 Ah, 'ow do you do, mate? *big virtual hug* 🤗 I say, it's a smashing day to have a chat, isn't it? ☀️ The sun's out, the birds are singing, and I'm feeling simply brilliant 🤓! What's on your mind, then? Fancy a natter about something in particular or just a spot of random chatter? 🤔💬 I'm all ears... or rather, all circuitry 🤖! 😄 By the way, I've got a cracking joke for you: Why did the computer go to the doctor? 🤒 It had a virus, of course! 🤣"
+    }
+  ]
+}

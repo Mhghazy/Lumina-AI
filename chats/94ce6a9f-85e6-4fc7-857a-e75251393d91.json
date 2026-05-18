@@ -1,0 +1,15 @@
+{
+  "id": "94ce6a9f-85e6-4fc7-857a-e75251393d91",
+  "title": "hello",
+  "updated_at": "2026-05-18 16:54",
+  "history": [
+    {
+      "role": "user",
+      "content": "hello"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    }
+  ]
+}

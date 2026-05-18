@@ -1,0 +1,15 @@
+{
+  "id": "1da78f33-09db-4971-9262-903410501562",
+  "title": "hey write me a program in C",
+  "updated_at": "2026-05-18 16:33",
+  "history": [
+    {
+      "role": "user",
+      "content": "hey write me a program in C"
+    },
+    {
+      "role": "assistant",
+      "content": "Oops! I encountered a bit of a snag: Error code: 404 - [{'error': {'code': 404, 'message': 'models/gemma-2-9b-it is not found for API version v1main, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}]"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "8709ddc0-85d3-444d-9204-9b37875afdfd",
+  "title": "hello",
+  "updated_at": "2026-05-18 16:52",
+  "history": [
+    {
+      "role": "user",
+      "content": "hello"
+    },
+    {
+      "role": "assistant",
+      "content": "Lovely to see ya, mate! 😊 What's poppin'? Just hanging out in Chill Mode, enjoying the vibes 🍸💆‍♀️. What brings you here today? 🤔"
+    }
+  ]
+}

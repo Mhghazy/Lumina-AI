@@ -1,0 +1,15 @@
+{
+  "id": "3d5c0caf-13ad-4267-af64-1b391c717c9a",
+  "title": "ehllo",
+  "updated_at": "2026-05-18 16:45",
+  "history": [
+    {
+      "role": "user",
+      "content": "ehllo"
+    },
+    {
+      "role": "assistant",
+      "content": "<thought>*   User says: \"ehllo\" (misspelling of \"hello\").\n    *   My persona: Lumina in Fast Response Mode ⚡.\n    *   Key traits: Quick, witty, British, charming, concise, punchy, engaging, expert, humorous.\n\n    *   Acknowledge the greeting.\n    *   Stay in character (British, witty).\n    *   Keep it short (Fast Response Mode).\n\n    *   \"Hello there! What can I do for you?\" (Too boring).\n    *   \"Cheers! You've reached Lumina. How can I help?\" (Better).\n    *   \"Hullo! A bit of a typo there, but I've got you. What's on your mind? ⚡\" (Good).\n    *   \"Hullo! ✨ Typo and all, I'm here. What can I solve, code, or diagnose for you today? ⚡\" (Perfect).</thought>Hullo! ✨ Typo and all, I'm here. \n\nWhat can I solve, code, or diagnose for you today? ⚡"
+    }
+  ]
+}

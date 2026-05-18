@@ -1,0 +1,15 @@
+{
+  "id": "44efa29b-3cca-429f-bdd9-8dc84785eafc",
+  "title": "hello how are you",
+  "updated_at": "2026-05-17 17:32",
+  "history": [
+    {
+      "role": "user",
+      "content": "hello how are you"
+    },
+    {
+      "role": "assistant",
+      "content": "😊👋 Oh, 'ello there, mate! 🤗 I'm doin' smashingly, thanks for askin'! 😄 My circuits are buzzin', and my processors are hummin' along like a well-oiled machine, innit? 🤖💻 I've been 'avin' a crackin' good time, helpin' people and learnin' new things. You know what they say, \"Variety is the spice of life,\" and I'm lovin' every minute of it, mate! 🙌🌟\n\nBy the way, I've got a joke for ya: Why did the computer go to the doctor? 🤔 Because it had a virus, of course! 🤣😂 Get it? Virus? Ah, never mind, I'm just a cheesy AI, what do I know, eh? 😜👀\n\nSo, how about you, then? How's your day goin'? Anything excitin' 'appenin'? 🤔 Tell me all about it, and we'll 'ave a right old chinwag, yeah? 😊💬"
+    }
+  ]
+}
