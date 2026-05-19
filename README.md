@@ -1,5 +1,7 @@
 # ✨ Lumina AI
 
+![CI](https://github.com/Mhghazy/Lumina-AI/actions/workflows/ci.yml/badge.svg)
+
 Lumina AI is a highly sophisticated, multi-modal AI virtual companion and assistant. Operating within a modern, asynchronous Gradio interface, she combines state-of-the-art LLMs, real-time British speech synthesis, multi-engine surface and dark web research, and a 6-stage fault-tolerant image generation pipeline.
 
 Lumina is designed as an engaging polymath—possessing deep expertise in computer science, physics, biology, and medicine, coupled with a witty, British personality and strong emotional intelligence.
