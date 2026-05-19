@@ -6,6 +6,21 @@ Lumina is designed as an engaging polymath—possessing deep expertise in comput
 
 ---
 
+## 🛠️ Tech Stack & Architecture
+
+Lumina AI leverages a modern, highly asynchronous Python ecosystem:
+- **Frontend / Interface**: [Gradio](https://gradio.app/) Blocks & Tabs UI.
+- **Server Framework**: [FastAPI](https://fastapi.tiangolo.com/), [Uvicorn](https://www.uvicorn.org/), and [Starlette Middleware](https://www.starlette.io/) for permissive CSP configuration.
+- **Core LLM Processing**: [Groq SDK](https://github.com/groq/groq-python) (Llama 3.3 70B & 3.1 8B) & [OpenAI SDK](https://github.com/openai/openai-python) (routing to Google's Gemma 4 31B API gateway).
+- **Speech Synthesis**: [Edge TTS](https://github.com/rany2/edge-tts) for real-time high-quality British female voice generation.
+- **Web & Dark Web Indexing**: Programmatic BeautifulSoup4 parser, DDGS scraper, Google Search, Tor clearweb gateway scraper (Ahmia/Torch), and Wikipedia client.
+- **Cascading Image Engine**: Together API, Vertex AI / Google Generative AI API (Imagen 4 & Gemini), Craiyon API, and AI Horde cluster client with a local Pillow (PIL) canvas fallback.
+
+> [!NOTE]
+> For in-depth file-by-file capabilities, complete system data-flows, and detailed API configurations, please refer to the [Lumina Technical Documentation](lumina_technical_documentation.md).
+
+---
+
 ## 🚀 Key Capabilities
 
 ### 🧠 1. 5-Tier Brain State Routing
