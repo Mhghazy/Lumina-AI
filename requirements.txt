@@ -8,3 +8,4 @@ ddgs
 duckduckgo-search
 googlesearch-python
 wikipedia
+openai
