@@ -8,6 +8,8 @@ Lumina is designed as an engaging polymath—possessing deep expertise in comput
 
 ## 🎥 Demo Video
 
+[Watch the Demo Video on GitHub](https://github.com/user-attachments/assets/47151d3d-2b19-4b42-b7a6-f02594d0b1d7)
+
 <video src="Demo.mp4" controls width="100%"></video>
 
 ---
@@ -85,9 +87,9 @@ Maintains persistent conversation logs inside the `chats/` directory. Lumina aut
     Create a `.env` file in the root directory:
     ```env
     GROQ_API_KEY=your_groq_key_here
+    GOOGLE_API_KEY=your_google_key_here
     
     # Optional image generation integrations
-    GOOGLE_API_KEY=your_google_key_here
     TOGETHER_API_KEY=your_together_key_here
     
     # Optional overrides
