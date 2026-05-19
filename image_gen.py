@@ -273,3 +273,225 @@ async def generate_image_async(prompt: str) -> str | None:
     except Exception as pil_e:
         print(f"[ImageGen] PIL fallback failed: {pil_e}")
         return None
+
+
+# ---------------------------------------------------------------------------
+# Image Editing — Stage 1: Gemini multimodal img2img
+# Uses gemini-2.0-flash-exp which supports image input → image output editing.
+# ---------------------------------------------------------------------------
+
+# Dedicated editing model — supports image input and image output in same turn
+# gemini-2.0-flash-preview-image-generation is the current model for img2img editing
+GOOGLE_GEMINI_EDIT_MODEL = os.environ.get("GOOGLE_GEMINI_EDIT_MODEL", "gemini-2.0-flash-preview-image-generation")
+
+def _try_edit_gemini(prompt: str, input_path: str, filepath: str) -> bool:
+    """Send the source image + edit instruction to Gemini and request an edited image back."""
+    print(f"[ImageEdit] Provider: Gemini multimodal edit ({GOOGLE_GEMINI_EDIT_MODEL})")
+    if not _has_google_key():
+        return False
+    try:
+        # Read, resize (max 1 MB), and encode the source image as base64
+        with open(input_path, "rb") as f:
+            raw = f.read()
+        img_obj = Image.open(BytesIO(raw)).convert("RGB")
+        # Resize so the payload stays manageable (Gemini inline limit ~20 MB but keep it lean)
+        img_obj.thumbnail((1024, 1024), Image.LANCZOS)
+        buf = BytesIO()
+        img_obj.save(buf, format="JPEG", quality=85)
+        img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+        # Try the primary edit model, then fall back to the configured image model
+        # Use only models known to support image input+output in the same turn
+        models_to_try = list(dict.fromkeys([
+            GOOGLE_GEMINI_EDIT_MODEL,
+            "gemini-2.0-flash-preview-image-generation",
+            GOOGLE_GEMINI_IMAGE_MODEL,
+        ]))
+        for model in models_to_try:
+            url = (
+                f"https://generativelanguage.googleapis.com/v1beta/models/"
+                f"{model}:generateContent?key={GOOGLE_API_KEY}"
+            )
+            payload = {
+                "contents": [{
+                    "parts": [
+                        {
+                            "inlineData": {
+                                "mimeType": "image/jpeg",
+                                "data": img_b64,
+                            }
+                        },
+                        {
+                            "text": (
+                                "Edit this image following the instruction below. "
+                                "Return only the modified image, no text.\n\n"
+                                f"Instruction: {prompt}"
+                            )
+                        },
+                    ]
+                }],
+                "generationConfig": {"responseModalities": ["Image", "Text"]},
+            }
+            try:
+                r = _make_session().post(url, json=payload, timeout=45)
+                r.raise_for_status()
+                data = r.json()
+                for candidate in data.get("candidates", []):
+                    for part in candidate.get("content", {}).get("parts", []):
+                        if "inlineData" in part:
+                            img_bytes = base64.b64decode(part["inlineData"]["data"])
+                            if _save_image_bytes(img_bytes, filepath):
+                                print(f"[ImageEdit] Gemini edit success with model: {model}")
+                                return True
+                print(f"[ImageEdit] Gemini edit ({model}): no inlineData in response — {r.text[:200]}")
+            except Exception as model_e:
+                print(f"[ImageEdit] Gemini edit ({model}) failed: {_safe_error(model_e)}")
+    except Exception as e:
+        print(f"[ImageEdit] Gemini edit setup failed: {_safe_error(e)}")
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Image Editing — Stage 2: AI Horde img2img (free distributed GPU cluster)
+# AI Horde supports source_image for img2img generation with ControlNet.
+# ---------------------------------------------------------------------------
+def _try_edit_aihorde(prompt: str, input_path: str, filepath: str) -> bool:
+    """Submit an AI Horde img2img job with the source image and edit prompt."""
+    print("[ImageEdit] Provider: AI Horde img2img")
+    try:
+        with open(input_path, "rb") as f:
+            raw = f.read()
+        img_obj = Image.open(BytesIO(raw)).convert("RGB")
+        img_obj.thumbnail((512, 512), Image.LANCZOS)  # AI Horde works best at 512x512
+        buf = BytesIO()
+        img_obj.save(buf, format="PNG")
+        source_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+        BASE = "https://aihorde.net/api/v2"
+        session = _make_session()
+        session.headers.update({
+            "apikey": "0000000000",
+            "Content-Type": "application/json",
+            "Client-Agent": "LuminaAI:1.0:local",
+        })
+        payload = {
+            "prompt": f"{prompt} ### low quality, blurry",
+            "params": {
+                "sampler_name": "k_euler_a",
+                "cfg_scale": 7,
+                "denoising_strength": 0.65,  # How much to change the image (0=no change, 1=full)
+                "steps": 25,
+                "width": 512,
+                "height": 512,
+                "n": 1,
+            },
+            "source_image": source_b64,
+            "source_processing": "img2img",
+            "models": ["Deliberate"],
+            "r2": False,
+        }
+        r_sub = session.post(f"{BASE}/generate/async", json=payload, timeout=20)
+        r_sub.raise_for_status()
+        job_id = r_sub.json().get("id")
+        if not job_id:
+            print("[ImageEdit] AI Horde img2img: no job ID")
+            return False
+        print(f"[ImageEdit]   AI Horde img2img job: {job_id} — polling...")
+        for attempt in range(12):  # poll up to ~60s
+            time.sleep(5)
+            rs = session.get(f"{BASE}/generate/status/{job_id}", timeout=10)
+            rs.raise_for_status()
+            sd = rs.json()
+            if sd.get("done"):
+                gens = sd.get("generations", [])
+                if gens:
+                    return _save_image_bytes(base64.b64decode(gens[0]["img"]), filepath)
+                return False
+            print(f"[ImageEdit]   AI Horde img2img: queue {sd.get('queue_position','?')}, ETA {sd.get('wait_time','?')}s")
+        print("[ImageEdit] AI Horde img2img: timed out")
+    except Exception as e:
+        print(f"[ImageEdit] AI Horde img2img failed: {_safe_error(e)}")
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Image Editing — Stage 3: PIL overlay fallback
+# Composites the prompt text onto the original image so the UI always gets
+# a valid response.
+# ---------------------------------------------------------------------------
+def _try_edit_pil_overlay(prompt: str, input_path: str, filepath: str) -> bool:
+    """Draw the edit prompt as an overlay on the source image (last resort)."""
+    print("[ImageEdit] Provider: PIL overlay fallback")
+    try:
+        from PIL import ImageDraw, ImageFont
+        src = Image.open(input_path).convert("RGB")
+        # Resize to a reasonable canvas
+        src = src.resize((1024, 1024), Image.LANCZOS)
+        overlay = Image.new("RGBA", src.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(overlay)
+        # Semi-transparent dark banner at the bottom
+        draw.rectangle([(0, 880), (1024, 1024)], fill=(18, 20, 26, 200))
+        banner_text = f"✏️ Edit requested: {prompt[:80]}{'...' if len(prompt) > 80 else ''}"
+        draw.text((24, 900), banner_text, fill=(220, 220, 240))
+        sub_text = "⚠ AI edit providers unavailable — original image shown with prompt overlay."
+        draw.text((24, 950), sub_text, fill=(160, 160, 180))
+        result = Image.alpha_composite(src.convert("RGBA"), overlay).convert("RGB")
+        result.save(filepath)
+        return True
+    except Exception as e:
+        print(f"[ImageEdit] PIL overlay failed: {e}")
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Edit provider chain
+# ---------------------------------------------------------------------------
+EDIT_PROVIDERS = [
+    _try_edit_gemini,
+    _try_edit_aihorde,
+]
+
+
+async def edit_image_async(prompt: str, input_image_path: str) -> str | None:
+    """
+    Edit an existing image guided by a text prompt.
+
+    Tries providers in order:
+      1. Gemini multimodal img2img (gemini-2.0-flash-preview-image-generation)
+      2. AI Horde img2img (free distributed GPU cluster with ControlNet)
+      3. PIL overlay fallback (draws prompt text on original image)
+
+    Args:
+        prompt:           The edit instruction (e.g. "Make the sky purple").
+        input_image_path: Absolute path to the source image file.
+
+    Returns:
+        Absolute path to the edited image, or None on total failure.
+    """
+    if not input_image_path or not os.path.exists(input_image_path):
+        print(f"[ImageEdit] Source image not found: {input_image_path}")
+        return None
+
+    filepath = os.path.join(IMAGE_CACHE_DIR, f"edit_{random.randint(1, 999_999)}.png")
+
+    def _run():
+        for fn in EDIT_PROVIDERS:
+            try:
+                if fn(prompt, input_image_path, filepath):
+                    return True
+            except Exception as e:
+                print(f"[ImageEdit] {fn.__name__} raised: {_safe_error(e)}")
+        return False
+
+    try:
+        if await asyncio.to_thread(_run):
+            return os.path.abspath(filepath)
+    except Exception as e:
+        print(f"[ImageEdit] Chain error: {_safe_error(e)}")
+
+    # PIL overlay as the ultimate fallback
+    if _try_edit_pil_overlay(prompt, input_image_path, filepath):
+        return os.path.abspath(filepath)
+
+    print("[ImageEdit] ⚠ All edit providers failed.")
+    return None

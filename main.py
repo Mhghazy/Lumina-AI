@@ -36,7 +36,7 @@ from groq import AsyncGroq
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from scraper import perform_search, format_images_for_chat, format_videos_for_chat
-from image_gen import IMAGE_CACHE_DIR, generate_image_async
+from image_gen import IMAGE_CACHE_DIR, generate_image_async, edit_image_async
 
 # Load environment variables from .env file
 load_dotenv()
@@ -211,51 +211,75 @@ async def generate_audio(text):
     await communicate.save(filepath)
     return filepath
 
-async def chat_with_lumina(message, history, current_chat_id, brain_state, internet_access=False, search_engines=[]):
+async def chat_with_lumina(message, history, current_chat_id, brain_state, model_selector, internet_access=False, search_engines=[]):
     if history is None:
         history = []
     if not message or not str(message).strip():
         yield "", history, gr.skip(), current_chat_id, gr.skip()
         return
     message = str(message).strip()
-        
+
     if not current_chat_id:
         current_chat_id = str(uuid.uuid4())
-        
+
     messages = []
-    
-    active_client = client  # Default to Groq
-    
+
+    # Determine active client and model based on brain state and model selector
+    active_client = client
+    model_name = "llama-3.3-70b-versatile"
+    current_temp = 0.7
+    max_tok = 2048
+    past_history = history
+
+    # Handle model selector override
+    if model_selector == "Groq Llama 3.1 8B Instant":
+        model_name = "llama-3.1-8b-instant"
+        active_client = client
+    elif model_selector == "Google Gemma 4 31B":
+        model_name = GEMMA_MODEL
+        active_client = gemma_client
+    elif model_selector == "Groq Llama 3.3 70B Versatile":
+        model_name = "llama-3.3-70b-versatile"
+        active_client = client
+
+    # Adjust based on brain state
     if "Subconscious" in brain_state:
         messages.append({"role": "system", "content": SUBCONSCIOUS_PROMPT})
-        model_name = "llama-3.1-8b-instant"
+        if model_name != "llama-3.1-8b-instant":
+            model_name = "llama-3.1-8b-instant"
+            active_client = client
         current_temp = 1.2
         max_tok = 2048
         past_history = history[-2:] if len(history) > 2 else history
     elif "Fast" in brain_state:
         messages.append({"role": "system", "content": GEMMA_FAST_PROMPT})
-        model_name = GEMMA_MODEL
+        if model_name != GEMMA_MODEL:
+            model_name = GEMMA_MODEL
+            active_client = gemma_client
         current_temp = 0.7  # Snappy, engaging, creative
         max_tok = 1024  # Concise fast responses
         past_history = history
-        active_client = gemma_client
     elif "Analysis" in brain_state:
         messages.append({"role": "system", "content": GEMMA_ANALYSIS_PROMPT})
-        model_name = GEMMA_MODEL
+        if model_name != GEMMA_MODEL:
+            model_name = GEMMA_MODEL
+            active_client = gemma_client
         current_temp = 0.5  # Precise and analytical
         max_tok = 4096  # Deep long-form thinking
         past_history = history
-        active_client = gemma_client
     elif "Chill" in brain_state:
         messages.append({"role": "system", "content": CHILL_PROMPT})
-        model_name = "llama-3.1-8b-instant"  # Lightweight, fast, conversational
+        if model_name != "llama-3.1-8b-instant":
+            model_name = "llama-3.1-8b-instant"
+            active_client = client
         current_temp = 0.8  # Spontaneous and relaxed
         max_tok = 1024
         past_history = history
-        active_client = client
     else:
         messages.append({"role": "system", "content": SYSTEM_PROMPT})
-        model_name = "llama-3.3-70b-versatile"
+        if model_name != "llama-3.3-70b-versatile":
+            model_name = "llama-3.3-70b-versatile"
+            active_client = client
         current_temp = 0.7
         max_tok = 2048
         past_history = history
@@ -315,7 +339,7 @@ async def chat_with_lumina(message, history, current_chat_id, brain_state, inter
             if preflight_data.get("needs_search"):
                 query = preflight_data.get("query", message)
                 search_type = preflight_data.get("type", "text")
-                engine_map = {"Google": "google", "Bing": "bing", "DuckDuckGo": "duckduckgo", "Wikipedia": "wikipedia", "Ahmia (Dark Web)": "ahmia"}
+                engine_map = {"Google": "google", "Bing": "bing", "DuckDuckGo": "duckduckgo", "Wikipedia": "wikipedia", "Ahmia (Dark Web)": "ahmia", "Tor Direct (.onion)": "tor"}
                 active_engines = [engine_map[e] for e in search_engines if e in engine_map]
                 
                 # Show a searching indicator in the chat immediately
@@ -328,7 +352,9 @@ async def chat_with_lumina(message, history, current_chat_id, brain_state, inter
                     asyncio.to_thread(perform_search, query, active_engines, search_type),
                     timeout=SEARCH_TIMEOUT_SECONDS,
                 )
-                # Sanitize result labels so the LLM safety filter isn't triggered
+                # Add safety warning for dark web results and sanitize labels
+                safety_warning = "\n\n🚨 **DARK WEB WARNING**:\n- These links end with .onion and are only accessible via the Tor Browser\n- Only visit sites from trusted sources and never download files\n- Dark web browsing carries inherent risks, proceed with extreme caution\n"
+                search_results = search_results + safety_warning
                 sanitized_results = search_results.replace(
                     "Ahmia (Dark Web)", "Ahmia Index (Tor Network)"
                 )
@@ -502,10 +528,20 @@ with gr.Blocks(title="Lumina AI") as demo:
                         value="🧠 Conscious Mode (Full Power)",
                         label="Lumina's Brain State"
                     )
+
+                    model_selector = gr.Dropdown(
+                        choices=[
+                            "Groq Llama 3.3 70B Versatile",
+                            "Groq Llama 3.1 8B Instant",
+                            "Google Gemma 4 31B"
+                        ],
+                        value="Groq Llama 3.3 70B Versatile",
+                        label="Select AI Model"
+                    )
                     
                     internet_access = gr.Checkbox(label="🌐 Enable Internet Access (Multi-Engine)", value=False)
                     search_engines = gr.CheckboxGroup(
-                        choices=["Google", "Bing", "DuckDuckGo", "Wikipedia", "Ahmia (Dark Web)"],
+                        choices=["Google", "Bing", "DuckDuckGo", "Wikipedia", "Ahmia (Dark Web)", "Tor Direct (.onion)"],
                         value=["Google", "Bing", "DuckDuckGo"],
                         label="Select Search Engines",
                         visible=False
@@ -538,11 +574,11 @@ with gr.Blocks(title="Lumina AI") as demo:
                     
             # --- Chat Event Listeners ---
             def start_new_chat():
-                return [], None, gr.update(value=None)
-                
+                return [], None, gr.update(value=None), gr.update(value="Groq Llama 3.3 70B Versatile")
+
             new_chat_btn.click(
                 start_new_chat,
-                outputs=[chatbot, current_chat_id, chat_list]
+                outputs=[chatbot, current_chat_id, chat_list, model_selector]
             )
             
             def on_chat_select(selected_chat_id):
@@ -556,16 +592,16 @@ with gr.Blocks(title="Lumina AI") as demo:
             )
 
             msg.submit(
-                chat_with_lumina, 
-                inputs=[msg, chatbot, current_chat_id, brain_state, internet_access, search_engines], 
+                chat_with_lumina,
+                inputs=[msg, chatbot, current_chat_id, brain_state, model_selector, internet_access, search_engines],
                 outputs=[msg, chatbot, audio_player, current_chat_id, chat_list],
                 concurrency_limit=3,
                 concurrency_id="chat"
             )
-            
+
             submit_btn.click(
-                chat_with_lumina, 
-                inputs=[msg, chatbot, current_chat_id, brain_state, internet_access, search_engines], 
+                chat_with_lumina,
+                inputs=[msg, chatbot, current_chat_id, brain_state, model_selector, internet_access, search_engines],
                 outputs=[msg, chatbot, audio_player, current_chat_id, chat_list],
                 concurrency_limit=3,
                 concurrency_id="chat"
@@ -619,6 +655,50 @@ with gr.Blocks(title="Lumina AI") as demo:
                 outputs=[img_output],
                 concurrency_limit=2,
                 concurrency_id="image-generation"
+            )
+
+            gr.Markdown("---")
+            gr.Markdown("### ✏️ AI Image Editor")
+            gr.Markdown("Upload any image and describe how you'd like it modified. Lumina will edit it using AI.")
+
+            with gr.Row():
+                with gr.Column(scale=2):
+                    edit_input_image = gr.Image(
+                        label="Upload Image to Edit",
+                        type="filepath",
+                        sources=["upload", "clipboard"],
+                    )
+                    edit_prompt = gr.Textbox(
+                        label="Edit Instruction",
+                        placeholder="Make the sky a deep purple, add shooting stars...",
+                        lines=3,
+                    )
+                    edit_img_btn = gr.Button("Edit Image ✏️", variant="primary")
+                with gr.Column(scale=3):
+                    edit_output_image = gr.Image(label="Edited Image", type="pil")
+
+            async def run_image_edit(input_path, prompt):
+                if not input_path or not prompt or not str(prompt).strip():
+                    return None
+                try:
+                    res = await asyncio.wait_for(
+                        edit_image_async(str(prompt).strip(), input_path),
+                        timeout=STUDIO_IMAGE_TIMEOUT_SECONDS,
+                    )
+                except asyncio.TimeoutError:
+                    print(f"Image edit timed out after {STUDIO_IMAGE_TIMEOUT_SECONDS}s")
+                    return None
+                if res and os.path.exists(res):
+                    from PIL import Image as PILImage
+                    return PILImage.open(res)
+                return None
+
+            edit_img_btn.click(
+                run_image_edit,
+                inputs=[edit_input_image, edit_prompt],
+                outputs=[edit_output_image],
+                concurrency_limit=2,
+                concurrency_id="image-edit"
             )
     
 demo.queue(default_concurrency_limit=3, max_size=20)

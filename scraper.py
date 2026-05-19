@@ -2,6 +2,8 @@ import requests
 import urllib.parse
 import random
 import base64
+import os
+import re
 from bs4 import BeautifulSoup
 import wikipedia
 from googlesearch import search as google_search_api
@@ -19,6 +21,15 @@ USER_AGENTS = [
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
 ]
 
+ONION_URL_RE = re.compile(
+    r"(?:(?:https?://)?(?:[a-z2-7]{16}|[a-z2-7]{56})\.onion(?:/[^\s<>'\")\]]*)?)",
+    re.IGNORECASE,
+)
+DEFAULT_TOR_PROXIES = (
+    "socks5h://127.0.0.1:9150",
+    "socks5h://127.0.0.1:9050",
+)
+
 def _get_headers():
     return {
         "User-Agent": random.choice(USER_AGENTS),
@@ -35,12 +46,65 @@ def _make_soup(html):
     return BeautifulSoup(html or "", "html.parser")
 
 
-def _fetch_soup(url, timeout=12):
-    response = requests.get(url, headers=_get_headers(), timeout=timeout)
+def _fetch_soup(url, timeout=12, session=None):
+    requester = session or requests
+    response = requester.get(url, headers=_get_headers(), timeout=timeout)
     response.raise_for_status()
     if response.apparent_encoding:
         response.encoding = response.apparent_encoding
     return _make_soup(response.text), response
+
+
+def _normalize_onion_url(raw_url):
+    if not raw_url:
+        return ""
+
+    url = raw_url.strip().strip("<>()[]{}'\".,")
+    if not url.lower().startswith(("http://", "https://")):
+        url = f"http://{url}"
+
+    parsed = urllib.parse.urlparse(url)
+    if not parsed.hostname or not parsed.hostname.lower().endswith(".onion"):
+        return ""
+    return urllib.parse.urlunparse(parsed)
+
+
+def _extract_onion_urls(text):
+    urls = []
+    seen = set()
+    for match in ONION_URL_RE.finditer(text or ""):
+        url = _normalize_onion_url(match.group(0))
+        key = url.rstrip("/").lower()
+        if url and key not in seen:
+            seen.add(key)
+            urls.append(url)
+    return urls
+
+
+def _is_onion_url(url):
+    return bool(_normalize_onion_url(url))
+
+
+def _tor_proxy_candidates():
+    configured = os.getenv("TOR_SOCKS_PROXY") or os.getenv("TOR_PROXY")
+    if configured:
+        return [p.strip() for p in re.split(r"[,;]", configured) if p.strip()]
+    return list(DEFAULT_TOR_PROXIES)
+
+
+def _fetch_onion_soup(url, timeout=25):
+    last_error = None
+    for proxy in _tor_proxy_candidates():
+        session = requests.Session()
+        session.trust_env = False
+        session.proxies = {"http": proxy, "https": proxy}
+        try:
+            soup, response = _fetch_soup(url, timeout=timeout, session=session)
+            return soup, response, proxy
+        except Exception as e:
+            last_error = e
+
+    raise last_error or RuntimeError("No Tor SOCKS proxies are configured.")
 
 
 def _decode_bing_url(href):
@@ -226,6 +290,10 @@ def _scrape_ahmia(query, max_results=10):
             cite_elem = item.find("cite")
             onion_host = cite_elem.get_text(strip=True) if cite_elem else ""
 
+            # If we have an onion_host (a .onion address) prefer it over the derived URL
+            if onion_host and onion_host.lower().endswith(".onion") and not onion_url.lower().endswith(".onion"):
+                onion_url = f"http://{onion_host}"
+
             # Description — skip the age/host spans
             desc_text = ""
             for p in item.find_all("p"):
@@ -296,6 +364,62 @@ def _scrape_torch(query, max_results=5):
 # ─────────────────────────────────────────────
 #  UTILITIES
 # ─────────────────────────────────────────────
+
+def search_onion_direct(query, max_results=5):
+    """Fetch explicitly supplied .onion URLs through a local Tor SOCKS proxy."""
+    onion_urls = _extract_onion_urls(query)
+    if not onion_urls:
+        return []
+
+    results = []
+    for onion_url in onion_urls[:max_results]:
+        try:
+            soup, response, proxy = _fetch_onion_soup(onion_url)
+            title_elem = soup.find("title")
+            title = title_elem.get_text(" ", strip=True) if title_elem else onion_url
+
+            desc_elem = soup.find("meta", attrs={"name": "description"})
+            description = desc_elem.get("content", "").strip() if desc_elem else ""
+            if not description:
+                paragraph = soup.find("p")
+                description = paragraph.get_text(" ", strip=True) if paragraph else ""
+
+            discovered_links = []
+            seen_links = set()
+            for anchor in soup.select("a[href]"):
+                href = urllib.parse.urljoin(onion_url, anchor.get("href", ""))
+                normalized = _normalize_onion_url(href)
+                key = normalized.rstrip("/").lower()
+                if normalized and key not in seen_links:
+                    seen_links.add(key)
+                    discovered_links.append(normalized)
+                if len(discovered_links) >= 8:
+                    break
+
+            results.append({
+                "title": title or onion_url,
+                "url": onion_url,
+                "onion_host": urllib.parse.urlparse(onion_url).hostname or "",
+                "description": description[:500],
+                "status": response.status_code,
+                "via_proxy": proxy,
+                "links": discovered_links,
+                "source": "Tor Direct (.onion)"
+            })
+        except Exception as e:
+            error_text = str(e)
+            if "SOCKS" in error_text or "socks" in error_text:
+                error_text = "Install requests[socks]/PySocks and run Tor Browser or Tor service."
+            results.append({
+                "title": "Tor direct fetch failed",
+                "url": onion_url,
+                "onion_host": urllib.parse.urlparse(onion_url).hostname or "",
+                "description": error_text[:500],
+                "source": "Tor Direct (.onion)"
+            })
+
+    return results
+
 
 def _deduplicate(results):
     """Remove duplicate results based on URL similarity."""
@@ -376,7 +500,7 @@ def perform_search(query, engines=None, search_type="text"):
     and returns:
       - formatted_text: rich string for the LLM context
       - raw_media: raw list of image/video dicts for direct chat embedding
-    Supported engines: "google", "bing", "duckduckgo", "wikipedia", "ahmia"
+    Supported engines: "google", "bing", "duckduckgo", "wikipedia", "ahmia", "tor"
     """
     if engines is None:
         engines = ["google", "duckduckgo", "wikipedia"]
@@ -402,11 +526,16 @@ def perform_search(query, engines=None, search_type="text"):
     if "ahmia" in engines and search_type == "text":
         aggregated_data["Ahmia (Dark Web)"] = search_ahmia(query)
 
+    if "tor" in engines and search_type == "text":
+        aggregated_data["Tor Direct (.onion)"] = search_onion_direct(query)
+
     # Build formatted output for the LLM context
     formatted_text = f"=== LIVE SEARCH RESULTS FOR: \"{query}\" ===\n\n"
 
     for engine, results in aggregated_data.items():
         formatted_text += f"── {engine} ──\n"
+        if engine in ("Ahmia (Dark Web)", "Tor Direct (.onion)") and results:
+            formatted_text += "\n⚠️ **IMPORTANT**: These are .onion services. Access them **only** with the Tor Browser, keep it updated, and never download files from untrusted sources.\n\n"
         if not results:
             formatted_text += "  No results found or engine unavailable.\n\n"
             continue
@@ -420,14 +549,25 @@ def perform_search(query, engines=None, search_type="text"):
                 desc = (res.get("description") or res.get("body") or res.get("summary") or "")
                 age = res.get("age", "")
                 onion = res.get("onion_host", "")
+                status = res.get("status", "")
+                via_proxy = res.get("via_proxy", "")
+                links = res.get("links", [])
                 formatted_text += f"  [{i+1}] {title}\n"
                 formatted_text += f"       URL: {url}\n"
                 if onion:
                     formatted_text += f"       Onion Host: {onion}\n"
+                if status:
+                    formatted_text += f"       HTTP Status: {status}\n"
+                if via_proxy:
+                    formatted_text += f"       Tor Proxy: {via_proxy}\n"
                 if age:
                     formatted_text += f"       Last seen: {age} ago\n"
                 if desc:
                     formatted_text += f"       Snippet: {desc[:300]}\n"
+                if links:
+                    formatted_text += "       Onion Links Found:\n"
+                    for link in links[:8]:
+                        formatted_text += f"         - {link}\n"
                 formatted_text += "\n"
 
             elif search_type == "images":
