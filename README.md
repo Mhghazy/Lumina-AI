@@ -6,6 +6,11 @@ Lumina is designed as an engaging polymath—possessing deep expertise in comput
 
 ---
 
+## Demo Video
+https://github.com/user-attachments/assets/57eb2d6d-5041-4e99-a635-65e8bfa5364e
+
+---
+
 ## 🛠️ Tech Stack & Architecture
 
 Lumina AI leverages a modern, highly asynchronous Python ecosystem:
@@ -79,9 +84,9 @@ Maintains persistent conversation logs inside the `chats/` directory. Lumina aut
     Create a `.env` file in the root directory:
     ```env
     GROQ_API_KEY=your_groq_key_here
+    GOOGLE_API_KEY=your_google_key_here
     
     # Optional image generation integrations
-    GOOGLE_API_KEY=your_google_key_here
     TOGETHER_API_KEY=your_together_key_here
     
     # Optional overrides
