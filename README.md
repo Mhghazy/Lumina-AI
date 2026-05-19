@@ -7,7 +7,7 @@ Lumina is designed as an engaging polymath—possessing deep expertise in comput
 ---
 
 ## Demo Video
-https://github.com/user-attachments/assets/57eb2d6d-5041-4e99-a635-65e8bfa5364e
+https://github.com/user-attachments/assets/47151d3d-2b19-4b42-b7a6-f02594d0b1d7
 
 ---
 
