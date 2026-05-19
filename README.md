@@ -6,6 +6,12 @@ Lumina is designed as an engaging polymath—possessing deep expertise in comput
 
 ---
 
+## 🎥 Demo Video
+
+<video src="Demo.mp4" controls width="100%"></video>
+
+---
+
 ## 🛠️ Tech Stack & Architecture
 
 Lumina AI leverages a modern, highly asynchronous Python ecosystem:
