@@ -1,43 +1,89 @@
-# Lumina AI
+# ✨ Lumina AI
 
-Lumina is a brilliant, witty, and charming female AI virtual character. She has a fantastic sense of humor, loves joking around, and proudly uses British spelling, slang, and colloquialisms. Despite her playful nature, she is a genius who excels in math, science, biology, physics, computer science, software development, and medicine. She also loves writing beautiful poems and catchy songs.
+Lumina AI is a highly sophisticated, multi-modal AI virtual companion and assistant. Operating within a modern, asynchronous Gradio interface, she combines state-of-the-art LLMs, real-time British speech synthesis, multi-engine surface and dark web research, and a 6-stage fault-tolerant image generation pipeline.
 
-This project uses the Groq API (Llama 3.3 70B) for fast, intelligent responses, and Edge TTS for high-quality, auto-playing British female voice generation. The interface is built using Gradio.
+Lumina is designed as an engaging polymath—possessing deep expertise in computer science, physics, biology, and medicine, coupled with a witty, British personality and strong emotional intelligence.
 
-## Prerequisites
+---
 
-- Python 3.8+
-- A [Groq API Key](https://console.groq.com/)
+## 🚀 Key Capabilities
 
-## Installation
+### 🧠 1. 5-Tier Brain State Routing
+Lumina dynamically adapts her behavior, model choices, temperatures, and context limits based on your selected mode:
+- **Conscious Mode (Full Power)**: Powered by **Llama 3.3 70B** (`temp=0.7`, `max_tokens=2048`). Witty, creative, and highly capable polymath.
+- **Fast Mode (Quick & Snappy)**: Powered by **Google Gemma 4 31B** (`temp=0.7`, `max_tokens=1024`). Optimized for immediate responses and snappy interactions.
+- **Deep Analysis Mode (Rigorous Thinking)**: Powered by **Google Gemma 4 31B** (`temp=0.5`, `max_tokens=4096`). Highly structured markdown output, tables, and step-by-step reasoning.
+- **Chill Mode (No Overthinking)**: Powered by **Llama 3.1 8B** (`temp=0.8`, `max_tokens=1024`). Conversational, relaxed, and breezily informal.
+- **Subconscious Mode (Power Saving)**: Powered by **Llama 3.1 8B** (`temp=1.2`, `max_tokens=2048`). Digital sleep-talking where Lumina describes abstract and colorful digital dreams.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/Lumina-AI.git
-   cd Lumina-AI
-   ```
+### 🌐 2. Multi-Engine Real-Time Web Search
+If internet access is toggled, a pre-flight classifier determines if your query requires external data. Lumina scrapes, deduplicates, and synthesizes live results from multiple engines:
+*   **Surface Web**: Google Search, Bing Web, DuckDuckGo, and Wikipedia.
+*   **Tor network**: Ahmia.fi index (with Tor-accessible Onion link delivery) and Torch fallback.
+*   **Rich Media Embedding**: Automatically injects image and video results as formatted markdown grids directly into the chat flow.
 
-2. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 🎨 3. 6-Stage Fault-Tolerant Image Generation
+A resilient cascading pipeline ensures that she will always deliver a visual response. When requested via the chatbot using `[IMAGE_PROMPT: ...]` or generated within the **AI Image Studio** tab (supporting *Realistic*, *Anime*, *CGI/3D*, and *Default* styles), the pipeline cascades through:
+1.  **Pollinations AI**: Default fast-generation endpoint (2 attempts, 3s delay).
+2.  **Together AI**: High-fidelity `FLUX.1-schnell-Free` model (requires `TOGETHER_API_KEY`).
+3.  **Craiyon v3**: Free, robust base64 JSON API fallback.
+4.  **Google Imagen**: Premium `imagen-4.0-generate-001` via Vertex API (requires `GOOGLE_API_KEY`).
+5.  **Gemini 3.1 Flash**: Experimental image modality endpoint (requires `GOOGLE_API_KEY`).
+6.  **AI Horde**: Decentralized GPU cluster endpoint running the `Deliberate` model.
+7.  **Local PIL Fallback Card**: If all services fail, a beautiful dark-themed canvas is dynamically generated locally with status warnings so the UI never crashes.
 
-3. Set up your environment variables:
-   Create a `.env` file in the root directory and add your Groq API key:
-   ```env
-   GROQ_API_KEY=your_api_key_here
-   ```
+### 🔊 4. Real-Time Speech Synthesis
+Lumina has a voice! Every textual response is cleaned (stripping code blocks, emojis, and markdown tags) and converted into speech using `edge-tts` (British accent: `en-GB-SoniaNeural`), streaming with automatic HTML5 autoplay.
 
-## Running the Application
+### 🗄️ 5. Chat History Persistence
+Maintains persistent conversation logs inside the `chats/` directory. Lumina automatically summarizes a title from the first message and updates timestamps on save.
 
-Start the application by running:
+---
+
+## 🛠️ Setup & Installation
+
+### Prerequisites
+*   Python 3.11+
+*   A [Groq API Key](https://console.groq.com/)
+*   *(Optional)* A Google Gemini API Key and Together AI API Key for premium image generation features.
+
+### Installation Steps
+
+1.  **Clone the Repository**:
+    ```bash
+    git clone https://github.com/Mhghazy/Lumina-AI.git
+    cd Lumina-AI
+    ```
+
+2.  **Install Dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3.  **Configure Environment Variables**:
+    Create a `.env` file in the root directory:
+    ```env
+    GROQ_API_KEY=your_groq_key_here
+    
+    # Optional image generation integrations
+    GOOGLE_API_KEY=your_google_key_here
+    TOGETHER_API_KEY=your_together_key_here
+    
+    # Optional overrides
+    GOOGLE_IMAGEN_MODEL=imagen-4.0-generate-001
+    GOOGLE_GEMINI_IMAGE_MODEL=gemini-3.1-flash-image-preview
+    ```
+
+---
+
+## 🚀 Running Lumina AI
+
+Start the application using:
 ```bash
 python main.py
 ```
 
-The Gradio interface will be available in your default web browser (typically at `http://127.0.0.1:7861`). You can type your messages to Lumina, and she will respond with text and an auto-playing voice!
+Open `http://127.0.0.1:7861` in your browser.
 
-## Features
-- **High-Speed Streaming:** Utilizes `AsyncGroq` with streaming to provide instant text responses.
-- **British Voice Generation:** Uses `edge-tts` to generate a high-quality British accent ("en-GB-SoniaNeural").
-- **Interactive UI:** Built on Gradio with a modern chatbot interface.
+- **💬 Chat Companion Tab**: Chat with Lumina, toggle web searching, switch between her 5 Brain States, and listen to her voice responses.
+- **🎨 AI Image Studio Tab**: Select specific styles and prompt the image generation pipeline directly.
