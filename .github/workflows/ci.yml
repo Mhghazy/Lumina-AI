@@ -25,4 +25,5 @@ jobs:
 
       - name: Check imports
         run: |
-          python -c "import gradio, groq, edge_tts, requests, bs4, ddgs, wikipedia"
+          python -c "import gradio, groq, edge_tts, requests, bs4, googlesearch, duckduckgo_search, wikipedia"
+
