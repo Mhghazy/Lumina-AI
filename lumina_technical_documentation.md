@@ -45,12 +45,12 @@ flowchart TD
     end
 
     subgraph ImageSubsystem [image_gen.py 6-Stage Image Pipeline]
-        Img1[1. Google Imagen 3]
-        Img2[2. Gemini 2.0 Flash]
-        Img3[3. Pollinations AI]
-        Img4[4. Craiyon v3]
-        Img5[5. AI Horde GPU Cluster]
-        Img6[6. Together AI FLUX]
+        Img1[1. Pollinations AI]
+        Img2[2. Together AI FLUX]
+        Img3[3. Craiyon v3]
+        Img4[4. Google Imagen 4]
+        Img5[5. Gemini 3.1 Flash]
+        Img6[6. AI Horde GPU Cluster]
         PIL[PIL Fallback Error Card]
     end
 
@@ -105,8 +105,8 @@ flowchart TD
 - **Anti-Bot Evasion & Headers:** Implements a rotating pool of modern browser `User-Agent` strings alongside realistic `Accept`, `Accept-Encoding`, and `Accept-Language` headers to bypass basic bot detection and WAFs.
 - **Multi-Engine Surface Web Scraping:**
   - `Google`: Uses `googlesearch-python` for advanced programmatic scraping.
-  - `Bing`: Directly fetches Bing search result pages (`https://www.bing.com/search`) and parses DOM nodes (`li.b_algo`, `h2 a`, `div.b_caption`) via `BeautifulSoup` and `lxml`.
-  - `DuckDuckGo`: Integrates `duckduckgo_search` (`DDGS`) to support specialized search modalities including `text`, `images`, `videos`, and `news`.
+  - `Bing`: Directly fetches Bing search result pages (`https://www.bing.com/search`) and parses DOM nodes (`li.b_algo`, `h2 a`, `div.b_caption`) via Beautiful Soup 4 and Python's built-in `html.parser`.
+  - `DuckDuckGo`: Integrates `ddgs` (`DDGS`), with a fallback to `duckduckgo_search`, to support specialized search modalities including `text`, `images`, `videos`, and `news`.
   - `Wikipedia`: Queries the official Wikipedia API, handling disambiguation exceptions gracefully to return verified page summaries.
 - **Dark Web / Tor Index Scraping:**
   - `Ahmia`: Scrapes `ahmia.fi` (the primary clearweb gateway to Tor hidden services). Parses `ol.searchResults li.result`, extracts onion redirect URLs (`redirect_url=`), onion hosts (`cite`), descriptions, and indexing age.
@@ -125,12 +125,12 @@ flowchart TD
 - **Cloudflare & SSL Evasion:** Configures custom `requests.Session` objects with `verify=False` (suppressing `urllib3` insecure request warnings) and injects rigorous browser headers (`Origin`, `Referer`, `Sec-Fetch-Mode`) to bypass Cloudflare WAFs.
 - **PIL Image Verification:** Protects the frontend from corrupt data or lazy-loading HTML queue pages masquerading as images. Every downloaded payload is loaded into `PIL.Image`, verified via `img.verify()`, and re-opened before saving to `image_cache/`.
 - **6-Stage Cascading Failover Hierarchy:**
-  1. `Stage 1: Google Imagen 3`: Calls `generativelanguage.googleapis.com` (`imagen-3.0-generate-002:predict`) using the user's dedicated Google API key. Parses `bytesBase64Encoded` for pristine photorealism.
-  2. `Stage 2: Gemini 2.0 Flash`: Queries `gemini-2.0-flash-exp:generateContent` with image modality enabled, extracting `inlineData` base64 payloads as a powerful experimental backup.
-  3. `Stage 3: Pollinations AI (Default)`: Hits the direct URL generation endpoint `image.pollinations.ai`. Implements a robust 4-attempt retry loop with 8-second delays to accommodate Pollinations' lazy-generation queue.
-  4. `Stage 4: Craiyon v3`: Executes a POST request to `api.craiyon.com/v3` with strict CORS/Sec-Fetch headers and version tokens, decoding the resulting base64 JPEG array.
-  5. `Stage 5: AI Horde`: Connects to `aihorde.net/api/v2` using the anonymous key `0000000000`. Submits an asynchronous generation job (`k_euler_a`, `Deliberate` model) and polls the status endpoint every 5 seconds for up to 2.5 minutes until completion.
-  6. `Stage 6: Together AI`: Initializes the `Together` SDK to invoke `FLUX.1-schnell-Free` when account billing credits are active. Handles both `b64_json` and direct URL response formats.
+  1. `Stage 1: Pollinations AI (Default)`: Hits the direct URL generation endpoint `image.pollinations.ai`. Implements a 2-attempt retry loop with 3-second delays.
+  2. `Stage 2: Together AI`: Initializes the `Together` SDK to invoke `FLUX.1-schnell-Free` when `TOGETHER_API_KEY` is provided. Handles both `b64_json` and direct URL response formats.
+  3. `Stage 3: Craiyon v3`: Executes a POST request to `api.craiyon.com/v3` with strict CORS/Sec-Fetch headers and version token `35s5hfwn9n78gb06`, decoding the resulting base64 JPEG array.
+  4. `Stage 4: Google Imagen`: Calls `generativelanguage.googleapis.com` using the `GOOGLE_IMAGEN_MODEL` (defaults to `imagen-4.0-generate-001`) with the user's dedicated Google API key. Parses the `bytesBase64Encoded` base64 payload.
+  5. `Stage 5: Gemini 3.1 Flash Image`: Queries `generativelanguage.googleapis.com` using the `GOOGLE_GEMINI_IMAGE_MODEL` (defaults to `gemini-3.1-flash-image-preview`) with image response modality enabled, extracting `inlineData` base64 payloads.
+  6. `Stage 6: AI Horde`: Connects to `aihorde.net/api/v2` using the anonymous key `0000000000`. Submits an asynchronous generation job (`k_euler_a`, `Deliberate` model) and polls the status endpoint every 4 seconds for up to 4 attempts.
 - **Local PIL Error Card Fallback:** If all 6 cloud stages experience catastrophic simultaneous outages, it dynamically draws a beautiful dark-themed (`#12141A`) error card using `PIL.ImageDraw` containing the truncated prompt and status warnings. This ensures Gradio never receives a `None` object and prevents frontend UI crashes.
 
 ---
@@ -144,8 +144,14 @@ groq
 gradio
 python-dotenv
 edge-tts
+requests
+beautifulsoup4
+ddgs
+duckduckgo-search
+googlesearch-python
+wikipedia
 ```
-*Note: Additional libraries utilized across the codebase (e.g., `fastapi`, `uvicorn`, `starlette`, `openai`, `beautifulsoup4`, `duckduckgo-search`, `googlesearch-python`, `wikipedia`, `requests`, `urllib3`, `pillow`, `together`) are either installed alongside Gradio/FastAPI or managed within the user's local Python 3.11 environment.*
+*Note: Additional libraries utilized across the codebase (e.g., `fastapi`, `uvicorn`, `starlette`, `openai`, `urllib3`, `pillow`, `together`) are either installed alongside Gradio/FastAPI or managed within the user's local Python 3.11 environment.*
 
 ---
 
@@ -185,6 +191,6 @@ edge-tts
 | **Frontend UI** | Gradio Blocks & Tabs | Multi-tab interface (Chat + AI Studio), chat history sidebar, brain state selectors, search engine toggles, real-time audio autoplay, multi-style dropdowns. |
 | **Conversational AI** | Groq Llama 3.3 / Google Gemma 4 | 5 distinct persona modes, emotional intelligence switching (humor to empathy), autonomous prompt generation for images and search. |
 | **Web Research** | BeautifulSoup, DDGS, Google/Wiki APIs | Surface web scraping, Tor dark web indexing (`ahmia.fi`), automatic deduplication, rich markdown media embedding. |
-| **Image Generation** | Google Imagen 3, Gemini Flash, AI Horde | 6-stage fault-tolerant failover, Cloudflare WAF evasion, lazy-generation retry loops, PIL integrity verification, fail-safe error cards. |
+| **Image Generation** | Pollinations, Together FLUX, Craiyon v3, Google Imagen, Gemini Flash, AI Horde | 6-stage fault-tolerant failover, Cloudflare WAF evasion, lazy-generation retry loops, PIL integrity verification, fail-safe error cards. |
 | **Speech Synthesis** | Edge TTS (`en-GB-SoniaNeural`) | On-the-fly text sanitization (removing markdown/emojis), asynchronous audio file caching, Windows socket error suppression. |
 | **Security & Server** | FastAPI, Uvicorn, Starlette Middleware | Permissive Content-Security-Policy injection, environment variable management, robust exception handling across all endpoints. |

@@ -1,10 +1,15 @@
 import requests
 import urllib.parse
 import random
+import base64
 from bs4 import BeautifulSoup
 import wikipedia
 from googlesearch import search as google_search_api
-from duckduckgo_search import DDGS
+
+try:
+    from ddgs import DDGS
+except ImportError:
+    from duckduckgo_search import DDGS
 
 # Rotating user agents to reduce bot detection
 USER_AGENTS = [
@@ -23,6 +28,45 @@ def _get_headers():
         "Connection": "keep-alive",
         "DNT": "1",
     }
+
+
+def _make_soup(html):
+    """Parse HTML with Beautiful Soup 4 using Python's bundled parser."""
+    return BeautifulSoup(html or "", "html.parser")
+
+
+def _fetch_soup(url, timeout=12):
+    response = requests.get(url, headers=_get_headers(), timeout=timeout)
+    response.raise_for_status()
+    if response.apparent_encoding:
+        response.encoding = response.apparent_encoding
+    return _make_soup(response.text), response
+
+
+def _decode_bing_url(href):
+    """Return the destination URL when Bing wraps a result in a redirect."""
+    if not href:
+        return ""
+
+    parsed = urllib.parse.urlparse(href)
+    query = urllib.parse.parse_qs(parsed.query)
+    encoded_target = query.get("u", [""])[0]
+    if encoded_target:
+        # Bing commonly stores the real URL as URL-safe base64 with an "a1" prefix.
+        encoded_target = encoded_target[2:] if encoded_target.startswith("a1") else encoded_target
+        try:
+            padded = encoded_target + ("=" * (-len(encoded_target) % 4))
+            decoded = base64.urlsafe_b64decode(padded).decode("utf-8", errors="ignore")
+            if decoded.startswith(("http://", "https://")):
+                return decoded
+        except Exception:
+            pass
+        if encoded_target.startswith(("http://", "https://")):
+            return encoded_target
+
+    if href.startswith("/"):
+        return urllib.parse.urljoin("https://www.bing.com", href)
+    return href
 
 
 # ─────────────────────────────────────────────
@@ -49,21 +93,26 @@ def search_bing(query, num_results=6):
     """Scrapes Bing search results using BeautifulSoup."""
     try:
         url = f"https://www.bing.com/search?q={urllib.parse.quote(query)}&count={num_results}"
-        response = requests.get(url, headers=_get_headers(), timeout=12)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, "lxml")
+        soup, _ = _fetch_soup(url, timeout=12)
 
         results = []
-        # Bing result containers: li.b_algo
-        for item in soup.select("li.b_algo")[:num_results]:
+        result_items = soup.select("li.b_algo")
+        if not result_items:
+            result_items = [item for item in soup.select("li") if item.select_one("h2 a")]
+
+        for item in result_items[:num_results]:
             title_elem = item.select_one("h2 a")
-            desc_elem = item.select_one("div.b_caption p") or item.select_one(".b_algoSlug")
+            desc_elem = (
+                item.select_one("div.b_caption p")
+                or item.select_one(".b_algoSlug")
+                or item.select_one(".b_snippet")
+                or item.find("p")
+            )
 
             title = title_elem.get_text(strip=True) if title_elem else ""
-            url_raw = title_elem.get("href", "") if title_elem else ""
+            url_raw = _decode_bing_url(title_elem.get("href", "")) if title_elem else ""
             description = desc_elem.get_text(strip=True) if desc_elem else ""
 
-            # Bing sometimes wraps URLs in redirect — take as-is since they're readable URLs
             if title and url_raw:
                 results.append({
                     "title": title,
@@ -149,9 +198,7 @@ def search_ahmia(query, max_results=10):
 def _scrape_ahmia(query, max_results=10):
     try:
         url = f"https://ahmia.fi/search/?q={urllib.parse.quote(query)}"
-        response = requests.get(url, headers=_get_headers(), timeout=20)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, "lxml")
+        soup, response = _fetch_soup(url, timeout=20)
 
         results = []
         # Primary selector
@@ -219,9 +266,7 @@ def _scrape_torch(query, max_results=5):
     """
     try:
         url = f"https://www.torchdarkweb.com/search?q={urllib.parse.quote(query)}"
-        response = requests.get(url, headers=_get_headers(), timeout=15)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, "lxml")
+        soup, _ = _fetch_soup(url, timeout=15)
 
         results = []
         for item in soup.select("div.result, li.result, div.search-result")[:max_results]:

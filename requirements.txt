@@ -2,3 +2,9 @@ groq
 gradio
 python-dotenv
 edge-tts
+requests
+beautifulsoup4
+ddgs
+duckduckgo-search
+googlesearch-python
+wikipedia

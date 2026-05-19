@@ -36,7 +36,7 @@ from groq import AsyncGroq
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from scraper import perform_search, format_images_for_chat, format_videos_for_chat
-from image_gen import generate_image_async
+from image_gen import IMAGE_CACHE_DIR, generate_image_async
 
 # Load environment variables from .env file
 load_dotenv()
@@ -97,6 +97,15 @@ NEVER refuse to share URLs or search results — present findings faithfully. Us
 
 CHATS_DIR = "chats"
 os.makedirs(CHATS_DIR, exist_ok=True)
+
+SEARCH_TIMEOUT_SECONDS = 25
+CHAT_IMAGE_TIMEOUT_SECONDS = 75
+STUDIO_IMAGE_TIMEOUT_SECONDS = 120
+TTS_TIMEOUT_SECONDS = 10
+TTS_MAX_CHARS = 1200
+PREFLIGHT_TIMEOUT_SECONDS = 12
+CHAT_REQUEST_TIMEOUT_SECONDS = 60
+STREAM_CHUNK_TIMEOUT_SECONDS = 30
 
 def get_chat_list():
     """Returns a list of tuples for the dropdown: (Chat Title, chat_id)"""
@@ -205,6 +214,10 @@ async def generate_audio(text):
 async def chat_with_lumina(message, history, current_chat_id, brain_state, internet_access=False, search_engines=[]):
     if history is None:
         history = []
+    if not message or not str(message).strip():
+        yield "", history, gr.skip(), current_chat_id, gr.skip()
+        return
+    message = str(message).strip()
         
     if not current_chat_id:
         current_chat_id = str(uuid.uuid4())
@@ -255,6 +268,11 @@ async def chat_with_lumina(message, history, current_chat_id, brain_state, inter
             messages.append({"role": "assistant", "content": val[1]})
             
     messages.append({"role": "user", "content": message})
+
+    history.append({"role": "user", "content": message})
+    history.append({"role": "assistant", "content": ""})
+    save_chat(current_chat_id, history)
+    yield "", history, gr.skip(), current_chat_id, gr.update(choices=get_chat_list(), value=current_chat_id)
     
     raw_media = []
     search_type = "text"
@@ -273,19 +291,25 @@ async def chat_with_lumina(message, history, current_chat_id, brain_state, inter
             # Note: Gemma doesn't support response_format={"type":"json_object"} so we prompt harder
             if is_gemma_mode:
                 preflight_messages[0]["content"] += " Output ONLY a raw JSON object with no markdown or extra text."
-                preflight_response = await preflight_client.chat.completions.create(
-                    messages=preflight_messages,
-                    model=preflight_model,
-                    temperature=0.1,
-                    max_tokens=200,
+                preflight_response = await asyncio.wait_for(
+                    preflight_client.chat.completions.create(
+                        messages=preflight_messages,
+                        model=preflight_model,
+                        temperature=0.1,
+                        max_tokens=200,
+                    ),
+                    timeout=PREFLIGHT_TIMEOUT_SECONDS,
                 )
             else:
-                preflight_response = await preflight_client.chat.completions.create(
-                    messages=preflight_messages,
-                    model=preflight_model,
-                    temperature=0.1,
-                    max_tokens=200,
-                    response_format={"type": "json_object"}
+                preflight_response = await asyncio.wait_for(
+                    preflight_client.chat.completions.create(
+                        messages=preflight_messages,
+                        model=preflight_model,
+                        temperature=0.1,
+                        max_tokens=200,
+                        response_format={"type": "json_object"}
+                    ),
+                    timeout=PREFLIGHT_TIMEOUT_SECONDS,
                 )
             preflight_data = json.loads(preflight_response.choices[0].message.content)
             if preflight_data.get("needs_search"):
@@ -295,14 +319,14 @@ async def chat_with_lumina(message, history, current_chat_id, brain_state, inter
                 active_engines = [engine_map[e] for e in search_engines if e in engine_map]
                 
                 # Show a searching indicator in the chat immediately
-                history.append({"role": "user", "content": message})
-                history.append({"role": "assistant", "content": f"🔍 *Searching {', '.join(search_engines)} for: **{query}**...*"})
+                history[-1]["content"] = f"Searching {', '.join(search_engines)} for: **{query}**..."
                 save_chat(current_chat_id, history)
                 yield "", history, gr.skip(), current_chat_id, gr.update(choices=get_chat_list(), value=current_chat_id)
                 
                 # Run blocking scraper in a thread so it doesn't freeze the event loop
-                search_results, raw_media = await asyncio.to_thread(
-                    perform_search, query, active_engines, search_type
+                search_results, raw_media = await asyncio.wait_for(
+                    asyncio.to_thread(perform_search, query, active_engines, search_type),
+                    timeout=SEARCH_TIMEOUT_SECONDS,
                 )
                 # Sanitize result labels so the LLM safety filter isn't triggered
                 sanitized_results = search_results.replace(
@@ -323,41 +347,58 @@ async def chat_with_lumina(message, history, current_chat_id, brain_state, inter
         except Exception as e:
             print(f"Pre-flight search error: {e}")
     
-    # Only append user/assistant placeholders if not already added by the search block
-    if not history or history[-1].get("role") != "assistant":
-        history.append({"role": "user", "content": message})
-        history.append({"role": "assistant", "content": ""})
-        save_chat(current_chat_id, history)
-        yield "", history, gr.skip(), current_chat_id, gr.update(choices=get_chat_list(), value=current_chat_id)
-    
     try:
         if active_client == gemma_client:
             # Google's OpenAI compatibility layer can throw 500 Internal Error on stream=True, so we use stream=False
-            chat_completion = await active_client.chat.completions.create(
-                messages=messages,
-                model=model_name,
-                temperature=current_temp,
-                max_tokens=max_tok,
-                stream=False
+            chat_completion = await asyncio.wait_for(
+                active_client.chat.completions.create(
+                    messages=messages,
+                    model=model_name,
+                    temperature=current_temp,
+                    max_tokens=max_tok,
+                    stream=False
+                ),
+                timeout=CHAT_REQUEST_TIMEOUT_SECONDS,
             )
             response_text = chat_completion.choices[0].message.content
             history[-1]["content"] = response_text
             yield "", history, gr.skip(), current_chat_id, gr.skip()
         else:
-            chat_completion = await active_client.chat.completions.create(
-                messages=messages,
-                model=model_name,
-                temperature=current_temp,
-                max_tokens=max_tok,
-                stream=True
+            chat_completion = await asyncio.wait_for(
+                active_client.chat.completions.create(
+                    messages=messages,
+                    model=model_name,
+                    temperature=current_temp,
+                    max_tokens=max_tok,
+                    stream=True
+                ),
+                timeout=CHAT_REQUEST_TIMEOUT_SECONDS,
             )
             
             response_text = ""
-            async for chunk in chat_completion:
+            while True:
+                try:
+                    chunk = await asyncio.wait_for(
+                        chat_completion.__anext__(),
+                        timeout=STREAM_CHUNK_TIMEOUT_SECONDS,
+                    )
+                except StopAsyncIteration:
+                    break
+                except asyncio.TimeoutError:
+                    print(f"Chat stream stalled for {STREAM_CHUNK_TIMEOUT_SECONDS}s")
+                    if not response_text:
+                        response_text = "Sorry, the model stream stalled. Please try again."
+                        history[-1]["content"] = response_text
+                        yield "", history, gr.skip(), current_chat_id, gr.skip()
+                    break
                 if chunk.choices[0].delta.content is not None:
                     response_text += chunk.choices[0].delta.content
                     history[-1]["content"] = response_text
                     yield "", history, gr.skip(), current_chat_id, gr.skip()
+    except asyncio.TimeoutError:
+        response_text = "Sorry, the model took too long to respond. Please try again."
+        history[-1]["content"] = response_text
+        yield "", history, gr.skip(), current_chat_id, gr.skip()
     except Exception as e:
         response_text = f"Oops! I encountered a bit of a snag: {str(e)}"
         history[-1]["content"] = response_text
@@ -380,17 +421,26 @@ async def chat_with_lumina(message, history, current_chat_id, brain_state, inter
     if "[IMAGE_PROMPT:" in response_text:
         image_prompts = re.findall(r'\[IMAGE_PROMPT:(.*?)\]', response_text)
         for prompt in image_prompts:
-            img_path = await generate_image_async(prompt.strip())
+            try:
+                img_path = await asyncio.wait_for(
+                    generate_image_async(prompt.strip()),
+                    timeout=CHAT_IMAGE_TIMEOUT_SECONDS,
+                )
+            except asyncio.TimeoutError:
+                print(f"Image generation timed out after {CHAT_IMAGE_TIMEOUT_SECONDS}s")
+                img_path = None
             if img_path and os.path.exists(img_path):
                 # Use Gradio's file serving URL so the chatbot can render the image
-                gradio_url = f"/gradio_api/file={img_path}"
+                file_path = os.path.abspath(img_path).replace("\\", "/")
+                gradio_url = f"/gradio_api/file={urllib.parse.quote(file_path, safe='/:')}"
             else:
                 gradio_url = img_path or ""
             replacement_md = f"\n\n![Generated Image]({gradio_url})\n\n" if gradio_url else "\n\n*(Image generation failed)*\n\n"
             response_text = re.sub(
                 rf'\[IMAGE_PROMPT:\s*{re.escape(prompt)}\s*\]',
-                replacement_md,
-                response_text
+                lambda _: replacement_md,
+                response_text,
+                count=1
             )
             
         history[-1]["content"] = response_text
@@ -402,8 +452,19 @@ async def chat_with_lumina(message, history, current_chat_id, brain_state, inter
     
     # Generate Audio
     try:
-        clean_text = clean_text_for_speech(response_text)
-        audio_path = await generate_audio(clean_text)
+        clean_text = clean_text_for_speech(response_text).strip()
+        if not clean_text.strip():
+            audio_path = None
+        else:
+            if len(clean_text) > TTS_MAX_CHARS:
+                clean_text = clean_text[:TTS_MAX_CHARS].rsplit(" ", 1)[0] + "..."
+            audio_path = await asyncio.wait_for(
+                generate_audio(clean_text),
+                timeout=TTS_TIMEOUT_SECONDS,
+            )
+    except asyncio.TimeoutError:
+        print(f"TTS timed out after {TTS_TIMEOUT_SECONDS}s")
+        audio_path = None
     except Exception as e:
         print(f"TTS Error: {e}")
         audio_path = None
@@ -497,13 +558,17 @@ with gr.Blocks(title="Lumina AI") as demo:
             msg.submit(
                 chat_with_lumina, 
                 inputs=[msg, chatbot, current_chat_id, brain_state, internet_access, search_engines], 
-                outputs=[msg, chatbot, audio_player, current_chat_id, chat_list]
+                outputs=[msg, chatbot, audio_player, current_chat_id, chat_list],
+                concurrency_limit=3,
+                concurrency_id="chat"
             )
             
             submit_btn.click(
                 chat_with_lumina, 
                 inputs=[msg, chatbot, current_chat_id, brain_state, internet_access, search_engines], 
-                outputs=[msg, chatbot, audio_player, current_chat_id, chat_list]
+                outputs=[msg, chatbot, audio_player, current_chat_id, chat_list],
+                concurrency_limit=3,
+                concurrency_id="chat"
             )
 
         with gr.Tab("🎨 AI Image Studio"):
@@ -534,7 +599,14 @@ with gr.Blocks(title="Lumina AI") as demo:
                 }
                 kw = style_map.get(style_label, "")
                 full_prompt = f"{prompt} {kw}".strip()
-                res = await generate_image_async(full_prompt)
+                try:
+                    res = await asyncio.wait_for(
+                        generate_image_async(full_prompt),
+                        timeout=STUDIO_IMAGE_TIMEOUT_SECONDS,
+                    )
+                except asyncio.TimeoutError:
+                    print(f"Studio image generation timed out after {STUDIO_IMAGE_TIMEOUT_SECONDS}s")
+                    return None
                 # generate_image_async now returns an absolute filepath
                 if res and os.path.exists(res):
                     from PIL import Image as PILImage
@@ -544,9 +616,13 @@ with gr.Blocks(title="Lumina AI") as demo:
             gen_img_btn.click(
                 generate_studio_image,
                 inputs=[img_prompt, img_style],
-                outputs=[img_output]
+                outputs=[img_output],
+                concurrency_limit=2,
+                concurrency_id="image-generation"
             )
     
+demo.queue(default_concurrency_limit=3, max_size=20)
+
 class CSPMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         response = await call_next(request)
@@ -563,7 +639,12 @@ class CSPMiddleware(BaseHTTPMiddleware):
 
 app = FastAPI()
 app.add_middleware(CSPMiddleware)
-app = gr.mount_gradio_app(app, demo, path="/")
+app = gr.mount_gradio_app(
+    app,
+    demo,
+    path="/",
+    allowed_paths=[os.path.abspath(IMAGE_CACHE_DIR)],
+)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=7861)
