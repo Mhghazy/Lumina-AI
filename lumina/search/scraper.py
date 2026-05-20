@@ -1,9 +1,8 @@
-import requests
-import urllib.parse
-import random
-import base64
 import os
 import re
+import urllib.parse
+import base64
+import requests
 from bs4 import BeautifulSoup
 import wikipedia
 from googlesearch import search as google_search_api
@@ -13,13 +12,7 @@ try:
 except ImportError:
     from duckduckgo_search import DDGS
 
-# Rotating user agents to reduce bot detection
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-]
+from lumina.utils.network import get_headers, make_session
 
 ONION_URL_RE = re.compile(
     r"(?:(?:https?://)?(?:[a-z2-7]{16}|[a-z2-7]{56})\.onion(?:/[^\s<>'\")\]]*)?)",
@@ -30,17 +23,6 @@ DEFAULT_TOR_PROXIES = (
     "socks5h://127.0.0.1:9050",
 )
 
-def _get_headers():
-    return {
-        "User-Agent": random.choice(USER_AGENTS),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate",
-        "Connection": "keep-alive",
-        "DNT": "1",
-    }
-
-
 def _make_soup(html):
     """Parse HTML with Beautiful Soup 4 using Python's bundled parser."""
     return BeautifulSoup(html or "", "html.parser")
@@ -48,7 +30,7 @@ def _make_soup(html):
 
 def _fetch_soup(url, timeout=12, session=None):
     requester = session or requests
-    response = requester.get(url, headers=_get_headers(), timeout=timeout)
+    response = requester.get(url, headers=get_headers(), timeout=timeout)
     response.raise_for_status()
     if response.apparent_encoding:
         response.encoding = response.apparent_encoding
@@ -241,17 +223,6 @@ def search_wikipedia(query):
 # ─────────────────────────────────────────────
 
 def search_ahmia(query, max_results=10):
-    """
-    Scrapes Ahmia.fi — the largest clearweb gateway to Tor dark web search.
-    HTML structure (verified 2025):
-      Results:  ol.searchResults > li.result
-      Title:    h4 a  (text)
-      Link:     h4 a [href] = '/search/redirect?...&redirect_url=<onion_url>'
-      Host:     cite tag
-      Desc:     p tag
-      Age:      span tag
-    Falls back to Torch (another dark web search engine) if Ahmia fails.
-    """
     results = _scrape_ahmia(query, max_results)
     if not results:
         print("[Scraper] Ahmia returned 0 results, trying Torch fallback...")
@@ -265,12 +236,9 @@ def _scrape_ahmia(query, max_results=10):
         soup, response = _fetch_soup(url, timeout=20)
 
         results = []
-        # Primary selector
         result_list = soup.select("ol.searchResults li.result")
-        # Fallback to any li.result
         if not result_list:
             result_list = soup.find_all("li", class_="result")
-        # Fallback: any article or div that looks like a search result
         if not result_list:
             result_list = soup.select("div.result, article.result")
 
@@ -290,11 +258,9 @@ def _scrape_ahmia(query, max_results=10):
             cite_elem = item.find("cite")
             onion_host = cite_elem.get_text(strip=True) if cite_elem else ""
 
-            # If we have an onion_host (a .onion address) prefer it over the derived URL
             if onion_host and onion_host.lower().endswith(".onion") and not onion_url.lower().endswith(".onion"):
                 onion_url = f"http://{onion_host}"
 
-            # Description — skip the age/host spans
             desc_text = ""
             for p in item.find_all("p"):
                 candidate = p.get_text(strip=True)
@@ -328,10 +294,6 @@ def _scrape_ahmia(query, max_results=10):
 
 
 def _scrape_torch(query, max_results=5):
-    """
-    Fallback dark web search via Torch clearweb mirror at torchdarkweb.com
-    (publicly accessible clearweb aggregator of Tor results).
-    """
     try:
         url = f"https://www.torchdarkweb.com/search?q={urllib.parse.quote(query)}"
         soup, _ = _fetch_soup(url, timeout=15)
@@ -440,17 +402,11 @@ def _deduplicate(results):
 # ─────────────────────────────────────────────
 
 def format_images_for_chat(results, max_show=6):
-    """
-    Converts image results into embedded markdown for the Gradio chatbot.
-    Uses DDG's 'thumbnail' field (CDN-hosted, reliable) instead of 'image'
-    (third-party host, often ERR_CONNECTION_TIMED_OUT).
-    """
     if not results:
         return ""
     md = "\n\n---\n### 🖼️ Image Results\n\n"
     shown = 0
     for r in results:
-        # Prefer DDG thumbnail (CDN-cached, always reachable) over raw image URL
         display_url = r.get("thumbnail") or r.get("image", "")
         source_url = r.get("url", "")
         title = r.get("title", "Image") or "Image"
@@ -464,9 +420,6 @@ def format_images_for_chat(results, max_show=6):
 
 
 def format_videos_for_chat(results, max_show=5):
-    """
-    Converts video results into formatted clickable markdown cards for the Gradio chatbot.
-    """
     if not results:
         return ""
     md = "\n\n---\n### 🎬 Video Results\n\n"
@@ -495,13 +448,6 @@ def format_videos_for_chat(results, max_show=5):
 # ─────────────────────────────────────────────
 
 def perform_search(query, engines=None, search_type="text"):
-    """
-    Executes search across multiple engines, deduplicates results,
-    and returns:
-      - formatted_text: rich string for the LLM context
-      - raw_media: raw list of image/video dicts for direct chat embedding
-    Supported engines: "google", "bing", "duckduckgo", "wikipedia", "ahmia", "tor"
-    """
     if engines is None:
         engines = ["google", "duckduckgo", "wikipedia"]
 
@@ -529,7 +475,6 @@ def perform_search(query, engines=None, search_type="text"):
     if "tor" in engines and search_type == "text":
         aggregated_data["Tor Direct (.onion)"] = search_onion_direct(query)
 
-    # Build formatted output for the LLM context
     formatted_text = f"=== LIVE SEARCH RESULTS FOR: \"{query}\" ===\n\n"
 
     for engine, results in aggregated_data.items():
