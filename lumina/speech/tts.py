@@ -17,6 +17,12 @@ async def clean_text_for_speech(text):
     text = re.sub(r'[\U00010000-\U0010ffff]', '', text)
     # Remove some BMP emojis (symbols, dingbats)
     text = re.sub(r'[\u2600-\u27BF]', '', text)
+    # Remove citation brackets like [1], [2][3] to prevent fabricated refs
+    text = re.sub(r'\[\d+(?:\]\s*\[\d+)*\]', '', text)
+    # Remove raw URLs that might hallucinate fake sources
+    text = re.sub(r'https?://\S+', '', text)
+    # Remove arXiv references
+    text = re.sub(r'\b(?:arXiv|arxiv)\s*:\s*\S+', '', text)
     return text
 
 async def generate_audio(text):
@@ -28,5 +34,9 @@ async def generate_audio(text):
     filename = f"lumina_{uuid.uuid4().hex[:8]}.mp3"
     filepath = os.path.join("audio_cache", filename)
     
-    await communicate.save(filepath)
-    return filepath
+    try:
+        await communicate.save(filepath)
+        return filepath
+    except Exception as e:
+        print(f"[TTS] Audio generation failed: {e}")
+        return None

@@ -1,0 +1,17 @@
+[run]
+source = lumina
+omit =
+    */tests/*
+    */venv/*
+    *__init__*
+
+[report]
+show_missing = True
+fail_under = 65
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == .__main__.:
+
+[html]
+directory = coverage_html

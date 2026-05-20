@@ -15,3 +15,7 @@ __pycache__/
 # Auto-generated local data
 audio_cache/
 chats/
+image_cache/
+.pytest_cache/
+coverage_html/
+

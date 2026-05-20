@@ -45,7 +45,10 @@ def _normalize_onion_url(raw_url):
     if not url.lower().startswith(("http://", "https://")):
         url = f"http://{url}"
 
-    parsed = urllib.parse.urlparse(url)
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except ValueError:
+        return ""
     if not parsed.hostname or not parsed.hostname.lower().endswith(".onion"):
         return ""
     return urllib.parse.urlunparse(parsed)

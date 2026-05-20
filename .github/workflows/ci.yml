@@ -27,3 +27,19 @@ jobs:
         run: |
           python -c "import gradio, groq, edge_tts, requests, bs4, googlesearch, duckduckgo_search, wikipedia"
 
+      - name: Install test dependencies
+        run: |
+          pip install -r tests/requirements-test.txt
+
+      - name: Smoke tests (critical path)
+        run: |
+          python -m pytest tests/ -m smoke --tb=short -q
+
+      - name: Full test suite with coverage
+        run: |
+          python -m pytest tests/ --tb=short -q --cov=lumina --cov-report=term --cov-fail-under=65
+
+      - name: Fuzz tests (random/malformed inputs)
+        run: |
+          python -m pytest tests/fuzz/ -m fuzz --tb=short -q
+

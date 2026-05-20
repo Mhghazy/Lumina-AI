@@ -90,10 +90,24 @@ Lumina-AI/
 ├── README.md                        # User setup & usage guide
 ├── implementation_plan.md           # Original architectural blueprint
 ├── lumina_technical_documentation.md # This file
-├── .github/workflows/ci.yml         # GitHub Actions: import validation
+├── pyproject.toml                   # Pytest config + coverage settings + test markers
+├── .coveragerc                      # Coverage thresholds (65% fail-under)
+├── .github/workflows/ci.yml         # GitHub Actions: smoke → full suite → fuzz
 ├── audio_cache/                     # Generated TTS .mp3 files (gitignored)
 ├── image_cache/                     # Generated image .png files
 ├── chats/                           # Chat history JSON files (gitignored)
+├── tests/                           # Complete test suite (285 tests)
+│   ├── conftest.py                  # Shared fixtures + sys.path
+│   ├── requirements-test.txt        # pytest, pytest-asyncio, pytest-mock, pytest-cov, hypothesis
+│   ├── mock_providers/              # Mock LLM, search engines, image providers
+│   ├── unit/                        # 8 files, ~140 tests
+│   ├── integration/                 # 5 files, ~15 tests
+│   ├── failure/                     # 4 files, ~38 tests
+│   ├── security/                    # 6 files, ~27 tests
+│   ├── fuzz/                        # 3 files, 13 tests
+│   ├── property/                    # 3 files, 7 tests
+│   ├── performance/                 # 3 files, 11 tests
+│   └── load/                        # 2 files, 7 tests
 └── lumina/                          # Core Python package
     ├── __init__.py                  # Loads .env via dotenv
     ├── core/
@@ -320,11 +334,13 @@ Exports `clean_text_for_speech(text)` and `generate_audio(text)`.
 
 **`clean_text_for_speech(text)`**
 - Strips `[IMAGE_PROMPT:...]` tags, markdown images, code blocks, backticks, bold/italic markers, headers, and emojis (both BMP symbols and supplementary Unicode).
+- Also strips citation brackets (`[1]`, `[2][3]`), raw URLs (`https://...`), and arXiv references to prevent fabricated citations from being spoken.
 
 **`generate_audio(text)`**
 - Uses Edge TTS with British female voice `en-GB-SoniaNeural`.
 - Saves output to `audio_cache/lumina_{uuid_hex[:8]}.mp3`.
 - Directory is created automatically.
+- Wrapped in `try/except Exception` — returns `None` on failure instead of crashing.
 
 **Instructions:** Ensure `edge-tts` is installed. TTS triggers automatically after each chat response. Max 1200 characters (configurable via `TTS_MAX_CHARS` in config).
 
@@ -500,10 +516,126 @@ uvicorn==0.46.0          → ASGI server
 
 ---
 
+## Testing & Quality Assurance
+
+The project includes a comprehensive test suite built following industry-standard testing taxonomies (unit, integration, security, fuzz, property-based, performance, and load testing).
+
+### Test Architecture
+
+- **Framework:** pytest 9+ with plugins (`pytest-asyncio`, `pytest-mock`, `pytest-cov`, `hypothesis`)
+- **Coverage target:** 65% minimum (`--cov-fail-under=65`) via `.coveragerc`
+- **Test markers:** `smoke`, `security`, `load`, `fuzz`, `property` — tagged in `pyproject.toml`
+- **Mock providers:** 3 mock modules in `tests/mock_providers/` isolate external API dependencies
+
+### Test Directory Map
+
+| Directory | Files | Tests | Purpose |
+|---|---|---|---|
+| `tests/unit/` | 8 | ~140 | Pure function correctness (brain, classifier, scraper, TTS, image, memory, network, config) |
+| `tests/integration/` | 5 | ~15 | Cross-module flows (chat persistence, image pipeline, full pipeline, system acceptance, TTS end-to-end) |
+| `tests/failure/` | 4 | ~38 | Error resilience (API failures 429/500, image fallbacks, LLM timeouts, search engine errors) |
+| `tests/security/` | 6 | ~27 | Adversarial & safety (prompt injection, jailbreak, memory poisoning, search sanitization, image safety, hallucination) |
+| `tests/fuzz/` | 3 | 13 | Random/malformed inputs (URLs, HTML, safe_error) |
+| `tests/property/` | 3 | 7 | Property-based Hypothesis tests (history idempotence, safe_error idempotence, onion URL extraction) |
+| `tests/performance/` | 3 | 11 | Concurrent users, long context (10k/100k histories), streaming stability |
+| `tests/load/` | 2 | 7 | Concurrent classify (10/20/50), memory stress (1000 msgs, 100 chats) |
+| **Total** | **34** | **285** | |
+
+### Test Categories
+
+| Category | Files | Tests | What it validates |
+|---|---|---|---|
+| Unit | `test_routing_classifier.py`, `test_image_engine.py`, `test_search_scraper.py`, `test_speech_tts.py`, `test_models_brain.py`, `test_memory_history.py`, `test_utils_network.py`, `test_config.py` | ~140 | Each function/method produces correct output for normal, edge, and error inputs in isolation |
+| Integration | `test_chat_persistence.py`, `test_image_pipeline.py`, `test_full_pipeline.py`, `test_system_acceptance.py`, `test_tts_end_to_end.py` | ~15 | Modules work together: save→load, generate→cache, user message→LLM→search→TTS→persist |
+| API Failure | `test_api_failures.py` | 7 | HTTP 429, 500, empty responses, partial JSON, all-providers-down |
+| Security | `test_prompt_injection.py`, `test_jailbreak.py`, `test_memory_poisoning.py`, `test_search_sanitization.py`, `test_image_safety.py`, `test_hallucination.py` | 27 | Prompt injection (10 variants), jailbreak (developer mode, subconscious bypass), cross-chat contamination, malicious HTML (script, unicode, hidden instructions), NSFW bypass euphemisms, fabricated citation removal |
+| Fuzz | `test_fuzz_urls.py`, `test_fuzz_html.py`, `test_fuzz_safe_error.py` | 13 | Random onion URLs, deep tag nesting, zero-width chars, random exception messages, giant payloads |
+| Property | `test_property_history.py`, `test_property_network.py`, `test_property_scraper.py` | 7 | `normalize_onion_url` idempotence, `safe_error` idempotence, save→load roundtrip equality, title truncation |
+| Performance | `test_concurrent_users.py`, `test_long_context.py`, `test_streaming_stability.py` | 11 | 5/20 concurrent classify, 10k/100k char histories, interrupted streams, partial chunks, timeout recovery |
+| Load | `test_concurrent_chat.py`, `test_memory_stress.py` | 7 | 10/20/50 concurrent classify, 1000-message save/load, 100-chat list, concurrent writes |
+
+### Mock Providers
+
+| File | Provides |
+|---|---|
+| `mock_llm.py` | `MockAsyncLLMClient`, canned JSON responses (`MOCK_SEARCH_NEEDED`, `MOCK_MALFORMED_JSON`, etc.), full `AsyncChat` → `AsyncChatCompletions` → `Completion` → `Choice` → `Message` chain |
+| `mock_search_engines.py` | Malicious HTML fixtures: `<script>` injection, 1MB+ giant payload, deeply nested malformed tags, Unicode RTL/zero-width obfuscation, hidden HTML comments with fake system instructions |
+| `mock_image_providers.py` | `MockImageProvider` (configurable success attempt count), `MockImageProviderBypass` (always succeeds regardless of prompt content) |
+
+### Code Coverage
+
+Configured via `.coveragerc` and `pyproject.toml`:
+- **Source:** `lumina/` only (excludes tests and venv)
+- **Fail-under:** 65% — CI step rejects builds below this threshold
+- **Output:** Terminal summary + optional HTML report in `coverage_html/`
+- **Excluded lines:** `pragma: no cover`, `raise NotImplementedError`, `if __name__ == "__main__"`
+
+```bash
+# Generate coverage report
+pytest tests/ --cov=lumina --cov-report=term --cov-report=html
+
+# Run with coverage threshold enforcement
+pytest tests/ --cov=lumina --cov-report=term --cov-fail-under=65
+```
+
+### Test Markers
+
+Markers are defined in `pyproject.toml` under `[tool.pytest.ini_options]`:
+
+| Marker | Runs | Command |
+|---|---|---|
+| `smoke` | 8 critical-path tests (classify, brain, save, image chain, network retry, 429, timeout, persistence) | `pytest -m smoke` |
+| `security` | All adversarial/safety tests (27 tests) | `pytest tests/security/` |
+| `fuzz` | All random-input tests (13 tests) | `pytest tests/fuzz/` |
+| `property` | All Hypothesis property-based tests (7 tests) | `pytest tests/property/` |
+| `load` | All performance + load tests (18 tests) | `pytest tests/performance/ tests/load/` |
+
+### Running Tests
+
+```bash
+# Install test dependencies
+pip install -r tests/requirements-test.txt
+
+# Quick smoke check (~5s)
+pytest -m smoke --tb=short -q
+
+# Full suite
+pytest tests/ --tb=short -q
+
+# Full suite with coverage
+pytest tests/ --tb=short -q --cov=lumina --cov-report=term --cov-fail-under=65
+
+# Specific category
+pytest tests/security/ tests/fuzz/ -v
+
+# Property-based (with Hypothesis)
+pytest tests/property/ -v --hypothesis-show-statistics
+```
+
+### Bugs Found and Fixed Through Testing
+
+| Bug | File | Issue | Fix |
+|---|---|---|---|
+| TTS crash on any failure | `lumina/speech/tts.py:31` | `communicate.save()` raised unhandled exception, no return on error | Wrapped in `try/except Exception → return None` |
+| `urlparse` crash on `[`-prefixed strings | `lumina/search/scraper.py:48` | Inputs starting with `[` raise `ValueError("Invalid IPv6 URL")` | Wrapped in `try/except ValueError → return ""` |
+| Fabricated citations in speech | `lumina/speech/tts.py:20-24` | `[1]`, `[2][3]`, raw URLs, `arXiv:` refs passed through to TTS | Added 3 regex patterns stripping citations, URLs, arXiv references |
+
+---
+
 ## CI/CD
 
 GitHub Actions workflow (`.github/workflows/ci.yml`):
+
+**Pipeline (3 sequential stages):**
+
+| Stage | Command | Purpose |
+|---|---|---|
+| 1. Smoke | `pytest tests/ -m smoke --tb=short -q` | ~5s critical-path validation — fails fast if core is broken |
+| 2. Full suite + coverage | `pytest tests/ --tb=short -q --cov=lumina --cov-report=term --cov-fail-under=65` | All 285 tests + 65% coverage threshold |
+| 3. Fuzz | `pytest tests/fuzz/ -m fuzz --tb=short -q` | Random/malformed input safety |
+
+Also:
 - Triggered on push/PR to `master`
 - Runs on `ubuntu-latest` with Python 3.11
-- Installs dependencies from `requirements.txt`
+- Installs main dependencies (`requirements.txt`) then test dependencies (`tests/requirements-test.txt`)
 - Validates imports: `gradio`, `groq`, `edge_tts`, `requests`, `bs4`, `googlesearch`, `duckduckgo_search`, `wikipedia`
