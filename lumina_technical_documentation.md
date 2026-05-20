@@ -6,6 +6,78 @@ Lumina AI v2 is a modular, multi-modal AI virtual companion and assistant. It or
 
 ---
 
+## 🏛️ System Architecture & Data Flow
+
+Lumina AI is structured as a modular, asynchronous web application built on top of **FastAPI**, **Uvicorn**, and **Gradio**. It orchestrates multiple external APIs and local scraping subsystems to deliver seamless conversational and generative experiences.
+
+```mermaid
+flowchart TD
+    subgraph Frontend [Gradio Web UI / Uvicorn Server]
+        UI[Gradio Interface]
+        ChatTab[💬 Chat Companion Tab]
+        StudioTab[🎨 AI Image Studio Tab]
+        UI --> ChatTab
+        UI --> StudioTab
+    end
+
+    subgraph Middleware [FastAPI Application]
+        CSP[CSPMiddleware]
+        FastAPI[FastAPI Mount]
+        CSP --> FastAPI
+    end
+
+    subgraph CoreBackend [lumina/ Package Orchestration]
+        Router[Brain State Router]
+        Preflight[Pre-flight Search Classifier]
+        History[Chat History Manager]
+        TTS[Edge TTS Engine]
+    end
+
+    subgraph ExternalLLMs [LLM Clients]
+        Groq[Groq API: Llama 3.3 70B / 3.1 8B]
+        Gemma[Google API via OpenAI API: Gemma 4 31B]
+    end
+
+    subgraph ScraperSubsystem [lumina/search/scraper.py Multi-Engine Scraper]
+        Google[Google Search API]
+        Bing[Bing Web Scraper]
+        DDG[DuckDuckGo DDGS]
+        Wiki[Wikipedia API]
+        Ahmia[Ahmia / Torch Dark Web]
+    end
+
+    subgraph ImageSubsystem [lumina/image/engine.py 6-Stage Image Pipeline]
+        Img1[1. Pollinations AI]
+        Img2[2. Together AI FLUX]
+        Img3[3. Craiyon v3]
+        Img4[4. Google Imagen 4]
+        Img5[5. Gemini 3.1 Flash]
+        Img6[6. AI Horde GPU Cluster]
+        PIL[PIL Fallback Error Card]
+    end
+
+    subgraph Storage [Local Filesystem Caches]
+        ChatStore[chats/*.json]
+        AudioStore[audio_cache/*.mp3]
+        ImageStore[image_cache/*.png]
+    end
+
+    Frontend --> Middleware
+    Middleware --> CoreBackend
+    ChatTab --> Router
+    StudioTab --> ImageSubsystem
+    Router --> Preflight
+    Preflight -- Needs Search --> ScraperSubsystem
+    Router --> ExternalLLMs
+    ExternalLLMs -- [IMAGE_PROMPT: ...] --> ImageSubsystem
+    ExternalLLMs -- Text Output --> TTS
+    History <--> ChatStore
+    TTS --> AudioStore
+    ImageSubsystem --> ImageStore
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -412,6 +484,19 @@ openai==2.37.0           → OpenAI-compatible Gemma client
 fastapi==0.136.1         → ASGI framework
 uvicorn==0.46.0          → ASGI server
 ```
+
+---
+
+## ⚙️ Summary of Subsystem Capabilities
+
+| Subsystem | Primary Technologies | Core Capabilities |
+| :--- | :--- | :--- |
+| **Frontend UI** | Gradio Blocks & Tabs | Multi-tab interface (Chat + AI Studio), chat history sidebar, brain state selectors, search engine toggles, real-time audio autoplay, multi-style dropdowns. |
+| **Conversational AI** | Groq Llama 3.3 / Google Gemma 4 | 5 distinct persona modes, emotional intelligence switching (humor to empathy), autonomous prompt generation for images and search. |
+| **Web Research** | BeautifulSoup, DDGS, Google/Wiki APIs | Surface web scraping, Tor dark web indexing (`ahmia.fi`), automatic deduplication, rich markdown media embedding. |
+| **Image Generation** | Pollinations, Together FLUX, Craiyon v3, Google Imagen, Gemini Flash, AI Horde | 6-stage fault-tolerant failover, Cloudflare WAF evasion, lazy-generation retry loops, PIL integrity verification, fail-safe error cards. |
+| **Speech Synthesis** | Edge TTS (`en-GB-SoniaNeural`) | On-the-fly text sanitization (removing markdown/emojis), asynchronous audio file caching, Windows socket error suppression. |
+| **Security & Server** | FastAPI, Uvicorn, Starlette Middleware | Permissive Content-Security-Policy injection, environment variable management, robust exception handling across all endpoints. |
 
 ---
 
