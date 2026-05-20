@@ -2,6 +2,10 @@ import sys
 import os
 from unittest.mock import MagicMock, AsyncMock
 
+os.environ.setdefault("GROQ_API_KEY", "test-dummy-key")
+os.environ.setdefault("GOOGLE_API_KEY", "test-dummy-key")
+os.environ.setdefault("TOGETHER_API_KEY", "test-dummy-key")
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from tests.mock_providers.mock_llm import (
