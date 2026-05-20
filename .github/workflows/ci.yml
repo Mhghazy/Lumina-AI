@@ -34,12 +34,24 @@ jobs:
       - name: Smoke tests (critical path)
         run: |
           python -m pytest tests/ -m smoke --tb=short -q
+        env:
+          GROQ_API_KEY: test-dummy-key
+          GOOGLE_API_KEY: test-dummy-key
+          TOGETHER_API_KEY: test-dummy-key
 
       - name: Full test suite with coverage
         run: |
           python -m pytest tests/ --tb=short -q --cov=lumina --cov-report=term --cov-fail-under=65
+        env:
+          GROQ_API_KEY: test-dummy-key
+          GOOGLE_API_KEY: test-dummy-key
+          TOGETHER_API_KEY: test-dummy-key
 
       - name: Fuzz tests (random/malformed inputs)
         run: |
           python -m pytest tests/fuzz/ -m fuzz --tb=short -q
+        env:
+          GROQ_API_KEY: test-dummy-key
+          GOOGLE_API_KEY: test-dummy-key
+          TOGETHER_API_KEY: test-dummy-key
 
