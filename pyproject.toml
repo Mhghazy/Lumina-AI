@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 asyncio_mode = "strict"
 testpaths = ["tests"]
 markers = [
-    "smoke: Critical-path tests run first in CI",
     "security: Security and adversarial tests",
     "load: Performance and stress tests",
     "fuzz: Random/fuzzing input tests",

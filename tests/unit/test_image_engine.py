@@ -90,7 +90,6 @@ class TestEditPilOverlay:
 
 class TestGenerateImageAsync:
     @pytest.mark.asyncio
-    @pytest.mark.smoke
     async def test_chain_stops_on_first_success(self):
         mock_providers = [
             MagicMock(return_value=True),

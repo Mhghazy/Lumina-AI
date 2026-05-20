@@ -6,7 +6,6 @@ from lumina.routing.classifier import classify_search_need
 from lumina.image.engine import generate_image_async, PROVIDERS
 
 
-@pytest.mark.smoke
 @pytest.mark.asyncio
 async def test_classify_groq_429_rate_limit():
     mock_client = MagicMock()

@@ -16,7 +16,6 @@ async def test_classify_timeout_while_gemma():
             assert result == {"needs_search": False}
 
 
-@pytest.mark.smoke
 @pytest.mark.asyncio
 async def test_classify_timeout_while_groq():
     client = MockAsyncLLMClient("", raise_on_create=True)

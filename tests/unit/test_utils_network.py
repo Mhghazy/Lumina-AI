@@ -79,7 +79,6 @@ class TestSaveImageBytes:
 
 
 class TestDownloadUrl:
-    @pytest.mark.smoke
     def test_retries_on_failure(self):
         mock_session = MagicMock()
         mock_response = MagicMock()

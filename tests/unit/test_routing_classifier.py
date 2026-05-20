@@ -65,7 +65,6 @@ async def test_prompt_construction_non_dict_history():
 
 
 @pytest.mark.asyncio
-@pytest.mark.smoke
 async def test_json_parsing_valid():
     client = MockAsyncLLMClient(json.dumps(MOCK_SEARCH_NEEDED))
     with patch("lumina.routing.classifier.groq_client", client):

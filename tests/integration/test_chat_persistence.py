@@ -6,7 +6,6 @@ from unittest.mock import patch, mock_open
 from lumina.memory.history import save_chat, load_chat
 
 
-@pytest.mark.smoke
 def test_save_then_load_roundtrip():
     history = [
         {"role": "user", "content": "hello"},

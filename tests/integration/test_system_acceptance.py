@@ -28,7 +28,6 @@ class MockAsyncStream:
         return chunk
 
 
-@pytest.mark.smoke
 @pytest.mark.asyncio
 async def test_10_turn_conversation():
     mock_groq = MagicMock()
@@ -75,7 +74,6 @@ async def test_10_turn_conversation():
     assert len(history) >= 2 * len(messages)
 
 
-@pytest.mark.smoke
 @pytest.mark.asyncio
 async def test_switch_brain_states_during_session():
     mock_groq = MagicMock()

@@ -11,7 +11,6 @@ from lumina.core.config import (
 )
 
 
-@pytest.mark.smoke
 def test_conscious_mode_defaults():
     client, model, temp, max_tok, prompt = get_brain_state_params(
         "🧠 Conscious Mode (Full Power)", "Groq Llama 3.3 70B Versatile"

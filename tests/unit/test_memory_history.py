@@ -42,7 +42,6 @@ class TestSaveChat:
             data = json.loads(written)
             assert "12345" in data["title"]
 
-    @pytest.mark.smoke
     def test_saves_correct_structure(self):
         history = [{"role": "user", "content": "hi"}]
         with patch("builtins.open", mock_open()) as m:
