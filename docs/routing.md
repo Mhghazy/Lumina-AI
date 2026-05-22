@@ -1,6 +1,7 @@
-# Engineering Design Document: LLM Routing Architecture
+# 🧠 Routing
 
-## 1. Introduction & Goals
+
+### 1. Introduction & Goals
 Lumina AI employs a dynamic LLM routing architecture to manage user requests efficiently. Because Lumina orchestrates multiple capabilities (casual conversation, deep analysis, web searching, image generation), statically binding a single LLM to all tasks is inefficient both in terms of latency and API costs.
 
 The goals of the LLM routing architecture are:
@@ -10,14 +11,14 @@ The goals of the LLM routing architecture are:
 
 ---
 
-## 2. Pre-flight Intent Classification (`classifier.py`)
+### 2. Pre-flight Intent Classification (`classifier.py`)
 
 Before a user's message is ever sent to the main response LLM, it is intercepted by a pre-flight classifier.
 
-### Purpose
+#### Purpose
 The classifier's sole responsibility is determining if the user's prompt requires external data retrieval (e.g., searching the surface web, dark web, or retrieving images/videos).
 
-### Implementation Details
+#### Implementation Details
 - **Function**: `classify_search_need(message, past_history, brain_state)`
 - **Model Selection**: 
   - If the user is in "Fast" or "Analysis" mode, it uses **Google Gemma 4 31B**.
@@ -29,14 +30,14 @@ The classifier's sole responsibility is determining if the user's prompt require
 
 ---
 
-## 3. Brain State Routing (`brain.py`)
+### 3. Brain State Routing (`brain.py`)
 
 Once pre-flight checks (and subsequent web searches) are complete, the `brain.py` router configures the primary generation LLM. 
 
-### Purpose
+#### Purpose
 It acts as a switchboard that translates UI settings (Brain State and Model overrides) into specific API parameters (`client`, `model_name`, `temperature`, `max_tokens`, `system_prompt`).
 
-### The 5-Tier Persona Mapping
+#### The 5-Tier Persona Mapping
 The system supports five distinct psychological "states", each tuning the LLM's behavior:
 
 1. **Conscious (Default)**
@@ -60,12 +61,12 @@ The system supports five distinct psychological "states", each tuning the LLM's 
    - **Settings**: Temp `1.2`, Max Tokens `2048`
    - **Role**: High temperature, creative, loose "dream" mode.
 
-### Manual Overrides
+#### Manual Overrides
 Users can manually override the model using the UI Model Selector. The `get_brain_state_params()` function evaluates this override first, allowing a user to, for example, apply the "Subconscious" high-temperature prompt to the heavy Llama 3.3 70B model if they explicitly select it.
 
 ---
 
-## 4. Data Flow Visualization
+### 4. Data Flow Visualization
 
 The following diagram illustrates the complete synchronous and asynchronous LLM routing lifecycle for a single user message.
 
@@ -100,3 +101,4 @@ sequenceDiagram
     LLM-->>UI: Yield Tokens
     UI-->>User: Render Real-time Response
 ```
+
