@@ -803,6 +803,7 @@ flowchart LR
     end
     
     Lumina([🤖 Lumina Backend Core])
+    Engine([🧠 LLM Inference Engine])
     
     User --> UC1(💬 Chat with AI Companion)
     User --> UC2(🧠 Select Brain State Persona)
@@ -823,10 +824,11 @@ flowchart LR
     
     %% Feedback loops returning the data
     BUC2 -.->|Return Context| Lumina
-    BUC4 -.->|Return Image| Lumina
-    BUC5 -.->|Return Audio| Lumina
+    BUC4 -.->|Return Image| User
+    BUC5 -.->|Return Audio| User
     
-    Lumina ==>|Stream Multimodal Response| User
+    Lumina ==>|Compile Prompt & Context| Engine
+    Engine ==>|Stream Response| User
 ```
 
 ### 3. The Chat Request Lifecycle (Sequence Diagram)
