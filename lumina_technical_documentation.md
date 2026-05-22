@@ -793,31 +793,30 @@ The repository utilizes standardized `.github` templates to enforce high-quality
 
 The following diagrams illustrate the high-level interactions, the internal orchestration, the complete request lifecycle, and the production deployment architecture of Lumina AI.
 
-### 1. High-Level Use Case Diagram
-This diagram illustrates the primary actions a human user can take when interacting with the frontend interface.
+### 1. System-Wide Use Case Diagram
+This diagram illustrates the primary actions a human user can take and how those actions connect to the autonomous orchestration handled by the Lumina Backend Core.
 
 ```mermaid
 flowchart LR
     User([👤 User])
+    Lumina([🤖 Lumina Backend Core])
+    
     User --> UC1(💬 Chat with AI Companion)
     User --> UC2(🧠 Select Brain State Persona)
     User --> UC3(🎨 Generate Images)
     User --> UC4(✏️ Edit Images via Multimodal)
     User --> UC5(📖 Review Conversation History)
-```
-
-### 2. AI Orchestration Use Case Diagram
-This diagram illustrates the autonomous tasks orchestrated by the backend subsystems on behalf of the user.
-
-```mermaid
-flowchart LR
-    Lumina([🤖 Lumina Backend Core])
-    Lumina --> UC1(🔍 Classify Search Intent)
-    Lumina --> UC2(🌐 Scrape Surface Web)
-    Lumina --> UC3(🧅 Scrape Dark Web)
-    Lumina --> UC4(🖼️ Cascade Image Generation)
-    Lumina --> UC5(🗣️ Synthesize Speech)
-    Lumina --> UC6(💾 Cache Artifacts to Disk)
+    
+    %% Connections between User intents and Backend Execution
+    UC1 --> Lumina
+    UC3 --> Lumina
+    UC4 --> Lumina
+    
+    Lumina --> BUC1(🔍 Classify Search Intent)
+    Lumina --> BUC2(🌐 Scrape Surface/Dark Web)
+    Lumina --> BUC4(🖼️ Cascade Image Generation)
+    Lumina --> BUC5(🗣️ Synthesize Speech)
+    Lumina --> BUC6(💾 Cache Artifacts to Disk)
 ```
 
 ### 3. The Chat Request Lifecycle (Sequence Diagram)
@@ -870,11 +869,11 @@ Illustrates the production-ready Docker infrastructure, showcasing how traffic h
 flowchart TD
     subgraph Host[Host OS / Server]
         subgraph Docker[Docker Network]
-            Nginx[Nginx Reverse Proxy\n(Port 80/443)]
-            App[Lumina FastAPI App\n(Gunicorn / Uvicorn Workers)]
+            Nginx["Nginx Reverse Proxy<br>(Port 80/443)"]
+            App["Lumina FastAPI App<br>(Gunicorn / Uvicorn Workers)"]
             Nginx <-->|WebSockets & HTTP| App
         end
-        Volumes[(Docker Volumes\nCaches & History)]
+        Volumes[("Docker Volumes<br>Caches & History")]
         App <--> Volumes
     end
     
