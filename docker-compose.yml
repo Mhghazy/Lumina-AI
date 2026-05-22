@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  lumina-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lumina-app
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    volumes:
+      # Mount cache directories to persist generated media and chat history across restarts
+      - lumina-audio-cache:/app/audio_cache
+      - lumina-image-cache:/app/image_cache
+      - lumina-chats:/app/chats
+
+  nginx:
+    image: nginx:alpine
+    container_name: lumina-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - lumina-app
+
+volumes:
+  lumina-audio-cache:
+  lumina-image-cache:
+  lumina-chats:
