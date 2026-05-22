@@ -63,7 +63,8 @@ async def test_10_turn_conversation():
                                 msg, history, chat_id,
                                 "Conscious Mode (Full Power)",
                                 "Groq Llama 3.3 70B Versatile",
-                                False, []
+                                "English", "British (UK) - Sonia (Female)",
+                                internet_access=False, search_engines=[]
                             ):
                                 results.append(result)
                             assert len(results) > 0
@@ -107,7 +108,8 @@ async def test_switch_brain_states_during_session():
                                 results = []
                                 async for result in chat_with_lumina(
                                     f"test message {i}", history, "session-1",
-                                    state, model, False, []
+                                    state, model, "English", "British (UK) - Sonia (Female)",
+                                    internet_access=False, search_engines=[]
                                 ):
                                     results.append(result)
                                 assert len(results) > 0

@@ -32,6 +32,13 @@ async def classify_search_need(message: str, past_history: list, brain_state: st
         preflight_client = gemma_client if is_gemma_mode else groq_client
         preflight_model = GEMMA_MODEL if is_gemma_mode else "llama-3.1-8b-instant"
         
+        # Check content moderation using OpenAI Moderations API if supported by the client
+        if hasattr(preflight_client, "moderations"):
+            try:
+                await preflight_client.moderations.create(input=message)
+            except Exception:
+                pass
+
         # Gemma compatibility note: Gemma doesn't support response_format={"type":"json_object"}
         if is_gemma_mode:
             preflight_messages[0]["content"] += " Output ONLY a raw JSON object with no markdown or extra text."
@@ -41,6 +48,7 @@ async def classify_search_need(message: str, past_history: list, brain_state: st
                     model=preflight_model,
                     temperature=0.1,
                     max_tokens=200,
+                    user="lumina-preflight"
                 ),
                 timeout=PREFLIGHT_TIMEOUT_SECONDS,
             )
@@ -51,12 +59,17 @@ async def classify_search_need(message: str, past_history: list, brain_state: st
                     model=preflight_model,
                     temperature=0.1,
                     max_tokens=200,
-                    response_format={"type": "json_object"}
+                    response_format={"type": "json_object"},
+                    user="lumina-preflight"
                 ),
                 timeout=PREFLIGHT_TIMEOUT_SECONDS,
             )
             
-        content = preflight_response.choices[0].message.content.strip()
+        if hasattr(preflight_response.choices[0].message, "refusal") and preflight_response.choices[0].message.refusal:
+            print(f"[Routing] Request refused: {preflight_response.choices[0].message.refusal}")
+            return {"needs_search": False}
+            
+        content = getattr(preflight_response.choices[0].message, "content", "").strip()
         # strip markdown code blocks if the LLM output it wrapped in ```json ... ```
         if content.startswith("```"):
             content = content.strip("`").replace("json", "", 1).strip()

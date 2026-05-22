@@ -23,11 +23,12 @@ async def clean_text_for_speech(text):
     text = re.sub(r'https?://\S+', '', text)
     # Remove arXiv references
     text = re.sub(r'\b(?:arXiv|arxiv)\s*:\s*\S+', '', text)
+    # Remove HTML tags (like audio and button tags)
+    text = re.sub(r'<[^>]*>', '', text)
     return text
 
-async def generate_audio(text):
+async def generate_audio(text, voice="en-GB-SoniaNeural"):
     """Generate audio using edge-tts and return the file path."""
-    voice = "en-GB-SoniaNeural"
     communicate = edge_tts.Communicate(text, voice)
     
     os.makedirs("audio_cache", exist_ok=True)

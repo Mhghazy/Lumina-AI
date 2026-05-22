@@ -80,3 +80,24 @@ class TestCleanTextForSpeech:
         result = await clean_text_for_speech(text)
         assert "```" not in result
         assert "I have provided the code" in result
+
+
+class TestGenerateAudio:
+    @pytest.mark.asyncio
+    async def test_generate_audio_with_custom_voice(self, mocker):
+        from lumina.speech.tts import generate_audio
+        # Mock edge_tts.Communicate
+        mock_communicate = mocker.patch("edge_tts.Communicate")
+        mock_instance = mock_communicate.return_value
+        
+        # Mock the save method of Communicate
+        mock_save = mocker.AsyncMock()
+        mock_instance.save = mock_save
+
+        result = await generate_audio("Hello, world!", voice="en-US-AriaNeural")
+        
+        # Verify Communicate was called with correct parameters
+        mock_communicate.assert_called_once_with("Hello, world!", "en-US-AriaNeural")
+        mock_save.assert_called_once()
+        assert result is not None
+        assert "audio_cache" in result
