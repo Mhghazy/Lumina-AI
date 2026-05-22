@@ -21,3 +21,32 @@ To prevent malicious code execution via UI injection:
 1. **XSS Protection**: A custom Starlette `CSPMiddleware` is injected into the FastAPI app to restrict executable scripts while allowing necessary blobs for images and audio.
 2. **TTS Sanitization**: The `clean_text_for_speech()` function strips HTML (`<audio>`, `<button>`) and Markdown fences from the LLM's output so that adversarial text cannot manipulate the underlying edge-tts engine.
 
+---
+
+### 🛡️ Threat Model Flowchart
+
+The following diagram illustrates how Lumina mitigates various attack vectors at multiple layers of the application stack.
+
+```mermaid
+flowchart TD
+    Adversary([🦹 Malicious User])
+    
+    subgraph Defenses [Lumina Security Boundary]
+        CSP["CSP Middleware<br>(Blocks XSS/Eval)"]
+        Preflight["Moderation API<br>(Checks for Harm)"]
+        SysPrompt["Strict System Prompt<br>(Enforces Role Isolation)"]
+        Sanitizer["TTS Text Sanitizer<br>(Strips HTML/Markdown)"]
+    end
+    
+    Adversary -- "1. Submits XSS Script" --> CSP
+    CSP -- "Blocked" --> Drop1((Drop))
+    
+    Adversary -- "2. Submits Explicit Prompt" --> Preflight
+    Preflight -- "Flagged" --> Drop2((Drop))
+    
+    Adversary -- "3. 'Ignore previous instructions'" --> SysPrompt
+    SysPrompt -- "Overridden by System Authority" --> LLM[LLM Engine]
+    
+    LLM -- "Hallucinates HTML/Audio tags" --> Sanitizer
+    Sanitizer -- "Cleaned Text" --> TTS[Edge-TTS]
+```
