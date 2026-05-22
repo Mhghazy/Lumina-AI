@@ -684,3 +684,209 @@ sequenceDiagram
     LLM-->>UI: Yield Tokens
     UI-->>User: Render Real-time Response
 ```
+
+---
+
+## 🛡️ Multimodal Failover Design
+
+Lumina achieves high availability through deep fallback cascades. By utilizing a "try-except chain", the system guarantees a response even when third-party APIs experience downtime or rate-limit blocks.
+
+### Image Generation Failover (6-Stage)
+If the primary image generator fails, the `generate_image_async()` function automatically cascades down to the next provider:
+1. **Pollinations AI**: Extremely fast, no authentication required.
+2. **Together AI (FLUX)**: High-quality models using `TOGETHER_API_KEY`.
+3. **Craiyon v3**: Web scraping-based fallback using custom headers.
+4. **Google Imagen 4**: High-fidelity authenticated generation.
+5. **Gemini 3.1 Flash**: Multimodal content generation fallback.
+6. **AI Horde**: A crowdsourced, anonymous GPU cluster (polls for completion).
+
+If all 6 providers fail, the system **never crashes**. Instead, it generates a fallback PIL (Python Imaging Library) error card locally, rendering the prompt and a generic "API Unavailable" message so the user interface remains stable.
+
+### Audio and Search Failovers
+- **TTS**: Handled via `edge-tts`. If the websocket connection to Microsoft drops, the `TTS_TIMEOUT_SECONDS` config catches the timeout, safely suppressing the error so the text response still renders for the user.
+- **Search Engine Scrapers**: If `googlesearch-python` triggers a 429 Rate Limit, Lumina automatically falls back to DuckDuckGo (`ddgs`), and subsequently Wikipedia. For Dark Web searches, it attempts Ahmia first, and falls back to Torch if `.onion` indexing is blocked.
+
+---
+
+## 🔒 Prompt Injection Threat Model
+
+Lumina implements defense-in-depth to protect against adversarial prompts and cross-site scripting (XSS).
+
+### Pre-flight Moderation Check
+During the search classification phase (`classifier.py`), user input is routed through the OpenAI `moderations` API (if the active LLM client supports it). If flagged for self-harm, hate speech, or explicit content, the request can be intercepted before hitting the reasoning models.
+
+### System Prompt Isolation
+The system strictly enforces role boundaries in the API payload:
+```python
+messages = [
+    {"role": "system", "content": SYSTEM_PROMPT},
+    {"role": "user", "content": user_input}
+]
+```
+The dynamic system prompt (which assigns the 5-tier brain state rules) is always prepended with ultimate authority. Any user attempt to inject "Ignore previous instructions" is countered by the heavy weighting of the `system` role in models like Llama 3.3 and Gemma.
+
+### Content Security Policy (CSP) & Markdown Sanitization
+To prevent malicious code execution via UI injection:
+1. **XSS Protection**: A custom Starlette `CSPMiddleware` is injected into the FastAPI app to restrict executable scripts while allowing necessary blobs for images and audio.
+2. **TTS Sanitization**: The `clean_text_for_speech()` function strips HTML (`<audio>`, `<button>`) and Markdown fences from the LLM's output so that adversarial text cannot manipulate the underlying edge-tts engine.
+
+---
+
+## 🌌 Distributed Image Pipeline
+
+The `lumina/image/engine.py` orchestrates a decentralized approach to image synthesis.
+
+### Pipeline Architecture
+- **Asynchronous Execution**: Because image generation can take anywhere from 3 seconds (Pollinations) to 2 minutes (AI Horde queue), the entire failover chain is wrapped in `asyncio.to_thread()`. This prevents the slow synchronous HTTP requests (`requests.Session().post`) from blocking Gradio's main asynchronous event loop.
+- **Image Editing (img2img)**: For the "AI Image Studio" tab, Lumina performs a 3-stage edit fallback:
+  1. **Gemini Multimodal**: Passes the base64-encoded image and text instruction directly to the `gemini-2.0-flash` vision model.
+  2. **AI Horde (img2img)**: Resizes the source image, applies `denoising_strength=0.65`, and polls the distributed GPU workers.
+  3. **PIL Overlay**: If both fail, Lumina draws a semi-transparent banner natively over the original image detailing the prompt, ensuring the user gets *some* visual feedback.
+
+---
+
+## 💾 Memory Persistence Design
+
+Chat history in Lumina is designed to be persistent, portable, and fault-tolerant.
+
+### History Serialization (`history.py`)
+All conversations are saved as JSON blobs in the `chats/` directory.
+
+- **Data Structure**:
+```json
+{
+  "id": "uuid4",
+  "title": "Explain quantum physics...",
+  "updated_at": "2026-05-22 14:30",
+  "history": [
+    {"role": "user", "content": "Explain quantum physics"},
+    {"role": "assistant", "content": "Quantum physics is..."}
+  ]
+}
+```
+
+### Auto-Titling and Flattening
+- **Title Generation**: `save_chat()` automatically extracts the very first user message, converts it to a string, and truncates it to 30 characters to dynamically name the chat session in the UI sidebar.
+- **Robust Parsing**: Gradio 4+ occasionally returns history as tuples (`(user_msg, bot_msg)`) or nested `FileData` dictionaries (when users upload images). The `extract_text_content()` recursive helper flattens these complex structures into clean strings before they are serialized to JSON or sent to the TTS engine.
+
+---
+
+## 🤝 Open-Source Collaboration & Repository Management
+
+Lumina AI is structured to support seamless open-source contributions and transparent project management.
+
+### Foundational Documents
+- **`CONTRIBUTING.md`**: Outlines the standard operating procedures for external developers, including how to fork, configure environment variables, run locally, and adhere to our branching strategy (`feature/` vs `bugfix/`).
+- **`ROADMAP.md`**: Provides a clear, tiered outlook on the project's future, broken down into Near Term (Vector Databases), Medium Term (Agentic Actions), and Long Term (Autonomous capabilities).
+- **`CHANGELOG.md`**: Adheres to the "Keep a Changelog" format to historically track major features, architectural pivots, and bug fixes across semantic versions.
+- **`VERSION`**: A strict semantic versioning file (currently `2.0.0`) tracking the overarching build state.
+
+### Automated GitHub Workflows
+The repository utilizes standardized `.github` templates to enforce high-quality issue tracking and pull requests:
+1. **Bug Reports (`.github/ISSUE_TEMPLATE/bug_report.md`)**: Mandates that reporters include reproducible steps, OS environment, Python version, and crash logs.
+2. **Feature Requests (`.github/ISSUE_TEMPLATE/feature_request.md`)**: Prompts users to define the problem their feature solves rather than just the feature itself.
+3. **Pull Request Validation (`.github/PULL_REQUEST_TEMPLATE.md`)**: Enforces a checklist (documentation updates, self-reviews, manual testing) before any code is merged into the `master` branch.
+
+---
+
+## 📊 Comprehensive Architectural Diagrams
+
+The following diagrams illustrate the high-level interactions, the internal orchestration, the complete request lifecycle, and the production deployment architecture of Lumina AI.
+
+### 1. High-Level Use Case Diagram
+This diagram illustrates the primary actions a human user can take when interacting with the frontend interface.
+
+```mermaid
+flowchart LR
+    User([👤 User])
+    User --> UC1(💬 Chat with AI Companion)
+    User --> UC2(🧠 Select Brain State Persona)
+    User --> UC3(🎨 Generate Images)
+    User --> UC4(✏️ Edit Images via Multimodal)
+    User --> UC5(📖 Review Conversation History)
+```
+
+### 2. AI Orchestration Use Case Diagram
+This diagram illustrates the autonomous tasks orchestrated by the backend subsystems on behalf of the user.
+
+```mermaid
+flowchart LR
+    Lumina([🤖 Lumina Backend Core])
+    Lumina --> UC1(🔍 Classify Search Intent)
+    Lumina --> UC2(🌐 Scrape Surface Web)
+    Lumina --> UC3(🧅 Scrape Dark Web)
+    Lumina --> UC4(🖼️ Cascade Image Generation)
+    Lumina --> UC5(🗣️ Synthesize Speech)
+    Lumina --> UC6(💾 Cache Artifacts to Disk)
+```
+
+### 3. The Chat Request Lifecycle (Sequence Diagram)
+A highly detailed, end-to-end sequence illustrating how a single user prompt triggers a massive orchestration of search scraping, LLM streaming, image generation, audio synthesis, and memory persistence.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Gradio UI
+    participant BrainRouter as Brain Router
+    participant SearchClass as Search Classifier
+    participant SearchEngines as Search Engines
+    participant LLM as Main LLM
+    participant ImageEngine as Image Engine
+    participant TTS as Edge-TTS
+    participant Persistence as Persistence Layer
+    
+    User->>UI: Submit prompt
+    UI->>BrainRouter: Fetch active Brain State parameters
+    BrainRouter-->>UI: Return System Prompt & Model
+    
+    UI->>SearchClass: Classify search intent (JSON)
+    alt needs_search == true
+        SearchClass->>SearchEngines: Query APIs / Scrape Web
+        SearchEngines-->>SearchClass: Return Context
+    end
+    SearchClass-->>UI: Return final context string
+    
+    UI->>LLM: Stream chat completion
+    LLM-->>UI: Stream text chunks
+    
+    opt Contains "/imagine" tag
+        UI->>ImageEngine: Extract prompt & trigger generation
+        ImageEngine-->>UI: Return generated image path
+    end
+    
+    UI->>TTS: Asynchronous text synthesis
+    TTS-->>UI: Return synthesized audio file path
+    
+    UI->>Persistence: Save conversation JSON to /chats
+    Persistence-->>UI: Saved
+    
+    UI-->>User: Stream complete multimodal response (Text + Audio + Image)
+```
+
+### 4. Deployment Diagram
+Illustrates the production-ready Docker infrastructure, showcasing how traffic hits the reverse proxy before being distributed to Uvicorn workers.
+
+```mermaid
+flowchart TD
+    subgraph Host[Host OS / Server]
+        subgraph Docker[Docker Network]
+            Nginx[Nginx Reverse Proxy\n(Port 80/443)]
+            App[Lumina FastAPI App\n(Gunicorn / Uvicorn Workers)]
+            Nginx <-->|WebSockets & HTTP| App
+        end
+        Volumes[(Docker Volumes\nCaches & History)]
+        App <--> Volumes
+    end
+    
+    Internet((🌍 Internet))
+    Internet <--> Nginx
+    
+    subgraph CloudAPIs[External Cloud APIs]
+        Groq(Groq Llama 3)
+        Google(Google Gemma/Imagen)
+        Together(Together FLUX)
+        TTS(Microsoft Edge TTS)
+    end
+    
+    App <--> CloudAPIs
+```
