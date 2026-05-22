@@ -798,7 +798,10 @@ This diagram illustrates the primary actions a human user can take and how those
 
 ```mermaid
 flowchart LR
-    User([👤 User])
+    subgraph Client [Web Browser / Local Machine]
+        User([👤 User])
+    end
+    
     Lumina([🤖 Lumina Backend Core])
     
     User --> UC1(💬 Chat with AI Companion)
@@ -817,6 +820,13 @@ flowchart LR
     Lumina --> BUC4(🖼️ Cascade Image Generation)
     Lumina --> BUC5(🗣️ Synthesize Speech)
     Lumina --> BUC6(💾 Cache Artifacts to Disk)
+    
+    %% Feedback loops returning the data
+    BUC2 -.->|Return Context| Lumina
+    BUC4 -.->|Return Image| Lumina
+    BUC5 -.->|Return Audio| Lumina
+    
+    Lumina ==>|Stream Multimodal Response| User
 ```
 
 ### 3. The Chat Request Lifecycle (Sequence Diagram)
