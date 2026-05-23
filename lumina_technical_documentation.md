@@ -14,7 +14,7 @@ If you prefer to read, search, or print the entire documentation as a single doc
 
 If you prefer to read through the documentation sequentially by topic, please follow this path:
 
-1. **[System Architecture](docs/architecture.md)** — High-level data flows, memory persistence, and system-wide use case diagrams.
+1. **[System Architecture](docs/architecture.md)** — High-level data flows, memory persistence, neural network model orchestration, and system-wide use case diagrams.
 2. **[Deployment Infrastructure](docs/deployment.md)** — Docker setup, Nginx configuration, and Uvicorn scaling.
 3. **[Security & Threat Models](docs/security.md)** — Prompt Injection defense, XSS mitigation, and the Threat Model Flowchart.
 4. **[LLM Routing Engine](docs/routing.md)** — Pre-flight search intent classification and the 5-Tier Brain State persona mapping.
