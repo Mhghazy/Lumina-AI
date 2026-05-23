@@ -310,6 +310,59 @@ flowchart TD
     App <--> CloudAPIs
 ```
 
+## 🔄 CI/CD Deployment Pipeline
+
+Lumina AI's release lifecycle is automated through a unified Continuous Integration and Continuous Delivery (CI/CD) pipeline. This guarantees that all code merges undergo rigorous quality checks, dependency vulnerability scans, and regression testing before being hot-deployed to production.
+
+The following flowchart maps the automated deployment journey from developer push to production verification:
+
+```mermaid
+flowchart TD
+    Developer([💻 Developer Push]) --> Trigger[GitHub Actions Runner]
+    
+    subgraph CI [1. Continuous Integration Stage]
+        Lint["Lint Checks<br>(Flake8 / Black)"]
+        Unit["Unit Tests<br>(pytest tests/unit)"]
+        Int["Integration Tests<br>(pytest tests/integration)"]
+        Security["Security Auditing<br>(Safety / Bandit)"]
+        
+        Lint --> Unit
+        Unit --> Int
+        Int --> Security
+    end
+    
+    Trigger --> CI
+    
+    subgraph CD [2. Continuous Delivery Stage]
+        DockerBuild["Build Docker Image<br>(Python 3.11 Base)"]
+        DockerPush["Push Image to Registry<br>(GitHub Packages / GCR)"]
+        
+        DockerBuild --> DockerPush
+    end
+    
+    CI -- Pass --> CD
+    
+    subgraph Deploy [3. Deployment Stage]
+        Pull["Pull New Image"]
+        Backup["Backup Chats Cache"]
+        Compose["Docker Compose Up<br>(--build -d)"]
+        NginxReload["Nginx Hot-Reload"]
+        
+        Pull --> Backup
+        Backup --> Compose
+        Compose --> NginxReload
+    end
+    
+    DockerPush -- Webhook/CD Tool --> Deploy
+    
+    subgraph SRE_Verify [4. Post-Deployment Verification]
+        Health["Health Check<br>(/metrics /healthz)"]
+    end
+    
+    NginxReload --> SRE_Verify
+```
+
+
 
 ---
 
@@ -517,6 +570,47 @@ sequenceDiagram
     
     UI-->>User: Stream complete multimodal response (Text + Audio + Image)
 ```
+
+---
+
+### 6. MLOps & AIOps Lifecycle
+
+Lumina AI's AIOps/MLOps strategy ensures that our dynamic API routing, model hyperparameters (temperature, max tokens), prompt templates, and pre-flight classification criteria are continually verified, tracked, and optimized. Since Lumina runs as an agentic AI system orchestration layer rather than serving local weights, the MLOps lifecycle centers on **LLMOps**, prompt engineering version control, dynamic routing optimization, and automated failure mitigation loops.
+
+The diagram below maps the continuous optimization loop of Lumina's dynamic prompt configurations, provider fallbacks, and runtime guardrails:
+
+```mermaid
+flowchart TD
+    subgraph Offline [Offline Optimization]
+        Prompts["Prompt Design & Versioning<br>(System / State Prompts)"]
+        FewShot["Few-Shot Sample Database<br>(for Classifier)"]
+        LocalVal["Local Evaluators<br>(Bias/Safety Benchmarks)"]
+    end
+
+    subgraph LLMOps [Runtime Model Routing & Guardrails]
+        Input["User Prompt"] --> Guard["Adversarial Guardrails<br>(moderations API)"]
+        Guard --> Router["Brain State Router<br>(Classifier LLaMA 8B)"]
+        Router --> DynamicLLM["Dynamic LLM Execution<br>(LLaMA 70B / Gemma 31B)"]
+    end
+
+    subgraph Monitoring [Continuous Feedback & Logging]
+        DynamicLLM --> History[("Chat Store<br>(chats/*.json)")]
+        DynamicLLM --> Logging["Observability Logs<br>(JSON Loki Traces)"]
+        Logging --> Metrics["Prometheus Analytics<br>(TTFT / Provider Latency)"]
+    end
+
+    subgraph SRE_Feedback [AIOps Feedback Loop]
+        Metrics --> Eval["Drift & Outage Evaluation<br>(Detect Provider Errors / 429s)"]
+        Eval --> CascadeUpdate["Adjust Failover Weightings<br>(image/engine.py updates)"]
+        Eval --> PromptTuning["Refine System Prompts<br>(config.py Prompt Tuning)"]
+    end
+
+    Prompts --> Guard
+    FewShot --> Router
+    SRE_Feedback -.->|Optimize Prompts| Prompts
+    SRE_Feedback -.->|Adjust Weights| DynamicLLM
+```
+
 
 
 ---
@@ -1152,6 +1246,42 @@ The FastAPI middleware exposes a `/metrics` endpoint (Prometheus format) trackin
 Alerts should be configured if:
 - The Pre-flight Search Classifier begins returning non-JSON formats repeatedly (indicating a prompt injection or LLM drift).
 - Image Generation reaches Stage 6 (AI Horde) or the PIL Fallback more than 5 times in a 10-minute window (indicating upstream provider outages).
+
+## 5. SRE Observability & Alerting Feedback Loop
+
+To maintain the high availability (99.9% uptime target) of Lumina's distributed components, we deploy an integrated Site Reliability Engineering (SRE) feedback and alerting loop. This ensures that response degradation, token streaming latency spikes, web scraping failures, and API authentication timeouts are instantly caught, reported, and managed.
+
+The following flowchart details the SRE feedback loop from live user traffic telemetry collection down to autonomic local failover actions:
+
+```mermaid
+flowchart TD
+    subgraph Application [FastAPI / Gradio App]
+        UserChat["User Traffic"] --> Trace["Trace ID Injection<br>(Request UUID)"]
+        Trace --> Subsystems["Subsystems<br>(Brain/Search/Image/TTS)"]
+    end
+
+    subgraph Collection [Telemetry Collection]
+        Subsystems --> Logs["JSON Logs<br>(Console / Disk)"]
+        Subsystems --> PromMetrics["Prometheus Metrics<br>(/metrics endpoint)"]
+    end
+
+    subgraph Storage [Observability Stack]
+        Logs --> Loki["Grafana Loki"]
+        PromMetrics --> PromDB[("Prometheus TSDB")]
+    end
+
+    subgraph Visualization [Visualization & Dashboards]
+        Loki --> Grafana["Grafana Unified Dashboard"]
+        PromDB --> Grafana
+    end
+
+    subgraph SRE_Engine [SRE Alerting & Autonomic Action]
+        Grafana --> Alert["Prometheus Alertmanager"]
+        Alert -- "TTFT > 5s or Outage" --> Notify["SRE Notification<br>(Slack / PagerDuty)"]
+        Alert -- "Cascades to Horde / PIL" --> Trigger["Autonomic Failover Actions<br>(Route to Local Fallbacks)"]
+    end
+```
+
 
 
 ---

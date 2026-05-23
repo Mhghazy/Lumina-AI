@@ -23,3 +23,39 @@ The FastAPI middleware exposes a `/metrics` endpoint (Prometheus format) trackin
 Alerts should be configured if:
 - The Pre-flight Search Classifier begins returning non-JSON formats repeatedly (indicating a prompt injection or LLM drift).
 - Image Generation reaches Stage 6 (AI Horde) or the PIL Fallback more than 5 times in a 10-minute window (indicating upstream provider outages).
+
+## 5. SRE Observability & Alerting Feedback Loop
+
+To maintain the high availability (99.9% uptime target) of Lumina's distributed components, we deploy an integrated Site Reliability Engineering (SRE) feedback and alerting loop. This ensures that response degradation, token streaming latency spikes, web scraping failures, and API authentication timeouts are instantly caught, reported, and managed.
+
+The following flowchart details the SRE feedback loop from live user traffic telemetry collection down to autonomic local failover actions:
+
+```mermaid
+flowchart TD
+    subgraph Application [FastAPI / Gradio App]
+        UserChat["User Traffic"] --> Trace["Trace ID Injection<br>(Request UUID)"]
+        Trace --> Subsystems["Subsystems<br>(Brain/Search/Image/TTS)"]
+    end
+
+    subgraph Collection [Telemetry Collection]
+        Subsystems --> Logs["JSON Logs<br>(Console / Disk)"]
+        Subsystems --> PromMetrics["Prometheus Metrics<br>(/metrics endpoint)"]
+    end
+
+    subgraph Storage [Observability Stack]
+        Logs --> Loki["Grafana Loki"]
+        PromMetrics --> PromDB[("Prometheus TSDB")]
+    end
+
+    subgraph Visualization [Visualization & Dashboards]
+        Loki --> Grafana["Grafana Unified Dashboard"]
+        PromDB --> Grafana
+    end
+
+    subgraph SRE_Engine [SRE Alerting & Autonomic Action]
+        Grafana --> Alert["Prometheus Alertmanager"]
+        Alert -- "TTFT > 5s or Outage" --> Notify["SRE Notification<br>(Slack / PagerDuty)"]
+        Alert -- "Cascades to Horde / PIL" --> Trigger["Autonomic Failover Actions<br>(Route to Local Fallbacks)"]
+    end
+```
+

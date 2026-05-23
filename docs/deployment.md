@@ -48,3 +48,56 @@ flowchart TD
     
     App <--> CloudAPIs
 ```
+
+## 🔄 CI/CD Deployment Pipeline
+
+Lumina AI's release lifecycle is automated through a unified Continuous Integration and Continuous Delivery (CI/CD) pipeline. This guarantees that all code merges undergo rigorous quality checks, dependency vulnerability scans, and regression testing before being hot-deployed to production.
+
+The following flowchart maps the automated deployment journey from developer push to production verification:
+
+```mermaid
+flowchart TD
+    Developer([💻 Developer Push]) --> Trigger[GitHub Actions Runner]
+    
+    subgraph CI [1. Continuous Integration Stage]
+        Lint["Lint Checks<br>(Flake8 / Black)"]
+        Unit["Unit Tests<br>(pytest tests/unit)"]
+        Int["Integration Tests<br>(pytest tests/integration)"]
+        Security["Security Auditing<br>(Safety / Bandit)"]
+        
+        Lint --> Unit
+        Unit --> Int
+        Int --> Security
+    end
+    
+    Trigger --> CI
+    
+    subgraph CD [2. Continuous Delivery Stage]
+        DockerBuild["Build Docker Image<br>(Python 3.11 Base)"]
+        DockerPush["Push Image to Registry<br>(GitHub Packages / GCR)"]
+        
+        DockerBuild --> DockerPush
+    end
+    
+    CI -- Pass --> CD
+    
+    subgraph Deploy [3. Deployment Stage]
+        Pull["Pull New Image"]
+        Backup["Backup Chats Cache"]
+        Compose["Docker Compose Up<br>(--build -d)"]
+        NginxReload["Nginx Hot-Reload"]
+        
+        Pull --> Backup
+        Backup --> Compose
+        Compose --> NginxReload
+    end
+    
+    DockerPush -- Webhook/CD Tool --> Deploy
+    
+    subgraph SRE_Verify [4. Post-Deployment Verification]
+        Health["Health Check<br>(/metrics /healthz)"]
+    end
+    
+    NginxReload --> SRE_Verify
+```
+

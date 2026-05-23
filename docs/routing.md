@@ -146,3 +146,44 @@ sequenceDiagram
     
     UI-->>User: Stream complete multimodal response (Text + Audio + Image)
 ```
+
+---
+
+### 6. MLOps & AIOps Lifecycle
+
+Lumina AI's AIOps/MLOps strategy ensures that our dynamic API routing, model hyperparameters (temperature, max tokens), prompt templates, and pre-flight classification criteria are continually verified, tracked, and optimized. Since Lumina runs as an agentic AI system orchestration layer rather than serving local weights, the MLOps lifecycle centers on **LLMOps**, prompt engineering version control, dynamic routing optimization, and automated failure mitigation loops.
+
+The diagram below maps the continuous optimization loop of Lumina's dynamic prompt configurations, provider fallbacks, and runtime guardrails:
+
+```mermaid
+flowchart TD
+    subgraph Offline [Offline Optimization]
+        Prompts["Prompt Design & Versioning<br>(System / State Prompts)"]
+        FewShot["Few-Shot Sample Database<br>(for Classifier)"]
+        LocalVal["Local Evaluators<br>(Bias/Safety Benchmarks)"]
+    end
+
+    subgraph LLMOps [Runtime Model Routing & Guardrails]
+        Input["User Prompt"] --> Guard["Adversarial Guardrails<br>(moderations API)"]
+        Guard --> Router["Brain State Router<br>(Classifier LLaMA 8B)"]
+        Router --> DynamicLLM["Dynamic LLM Execution<br>(LLaMA 70B / Gemma 31B)"]
+    end
+
+    subgraph Monitoring [Continuous Feedback & Logging]
+        DynamicLLM --> History[("Chat Store<br>(chats/*.json)")]
+        DynamicLLM --> Logging["Observability Logs<br>(JSON Loki Traces)"]
+        Logging --> Metrics["Prometheus Analytics<br>(TTFT / Provider Latency)"]
+    end
+
+    subgraph SRE_Feedback [AIOps Feedback Loop]
+        Metrics --> Eval["Drift & Outage Evaluation<br>(Detect Provider Errors / 429s)"]
+        Eval --> CascadeUpdate["Adjust Failover Weightings<br>(image/engine.py updates)"]
+        Eval --> PromptTuning["Refine System Prompts<br>(config.py Prompt Tuning)"]
+    end
+
+    Prompts --> Guard
+    FewShot --> Router
+    SRE_Feedback -.->|Optimize Prompts| Prompts
+    SRE_Feedback -.->|Adjust Weights| DynamicLLM
+```
+
