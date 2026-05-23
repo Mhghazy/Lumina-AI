@@ -62,6 +62,58 @@ flowchart TD
     style AgileAI fill:#1e222b,stroke:#4caf50,color:#fff
 ```
 
+### 🏃 Scrum-Like Patterns in Platform Evolution
+
+Lumina's engineering practices also closely resemble the **Scrum** framework, mapping agile concepts to tangible platform equivalents. This enables rapid feedback loops, transparent feature planning, and retrospective architectural tuning.
+
+| Scrum Concept | Lumina Equivalent | Description |
+|---|---|---|
+| **Sprint Increments** | Major Repository Revisions | Each major release bundle functions as a Sprint increment, packaging fully tested updates into production-ready iterations. |
+| **Backlog Evolution** | Roadmap & Planned Features | The [ROADMAP.md](file:///d:/AI models/Lumina AI/Lumina-AI/ROADMAP.md) acts as the product backlog, evolving as user metrics and SRE telemetry pinpoint refinement needs. |
+| **Retrospective Thinking** | ADR Consequences Sections | Architecture Decision Records (ADRs) document technical decisions, with their "Consequences" sections serving as retrospectives on architectural performance. |
+| **Continuous Delivery** | CI/CD Deployment Pipeline | Automated checks stage, verify, and push updates, achieving the Scrum goal of delivering a potentially shippable increment continuously. |
+| **Iterative Releases** | Architectural Revisions | System structure, modular APIs, and routing tiers are revised incrementally based on live performance, avoiding monolithic rewrite risks. |
+
+The diagram below outlines the structural mappings between standard Scrum concepts and their direct implementations in the Lumina platform:
+
+```mermaid
+flowchart LR
+    subgraph ScrumConcept ["Scrum Framework"]
+        Sprint["Sprint Increments"]
+        Backlog["Backlog Evolution"]
+        Retro["Retrospective Thinking"]
+        CD["Continuous Delivery"]
+        Iterative["Iterative Releases"]
+    end
+
+    subgraph LuminaEquivalent ["Lumina Platform Equivalent"]
+        Revisions["Major Repo Revisions"]
+        Roadmap["Roadmap & Planned Features"]
+        ADRConsequences["ADR Consequences Sections"]
+        Pipeline["CI/CD Deployment Pipeline"]
+        ArchRevisions["Architectural Revisions"]
+    end
+
+    Sprint <-->|Corresponds to| Revisions
+    Backlog <-->|Corresponds to| Roadmap
+    Retro <-->|Corresponds to| ADRConsequences
+    CD <-->|Corresponds to| Pipeline
+    Iterative <-->|Corresponds to| ArchRevisions
+
+    style ScrumConcept fill:#12141a,stroke:#343a40,stroke-width:2px,color:#fff
+    style LuminaEquivalent fill:#12141a,stroke:#343a40,stroke-width:2px,color:#fff
+    style Sprint fill:#1e222b,stroke:#00bcd4,color:#fff
+    style Revisions fill:#1e222b,stroke:#00bcd4,color:#fff
+    style Backlog fill:#1e222b,stroke:#e91e63,color:#fff
+    style Roadmap fill:#1e222b,stroke:#e91e63,color:#fff
+    style Retro fill:#1e222b,stroke:#9c27b0,color:#fff
+    style ADRConsequences fill:#1e222b,stroke:#9c27b0,color:#fff
+    style CD fill:#1e222b,stroke:#4caf50,color:#fff
+    style Pipeline fill:#1e222b,stroke:#4caf50,color:#fff
+    style Iterative fill:#1e222b,stroke:#ff9800,color:#fff
+    style ArchRevisions fill:#1e222b,stroke:#ff9800,color:#fff
+```
+
 ---
 
 ## 🏛️ System Architecture & Data Flow
