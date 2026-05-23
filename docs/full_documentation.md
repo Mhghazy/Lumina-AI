@@ -114,6 +114,57 @@ flowchart LR
     style ArchRevisions fill:#1e222b,stroke:#ff9800,color:#fff
 ```
 
+## 📋 Functional & Non-Functional Requirements
+
+To ensure the platform operates as a secure, high-availability, and low-latency virtual assistant, Lumina complies with the following technical requirements.
+
+### 1. Functional Requirements (FR)
+
+Functional requirements define the core capabilities and services that the Lumina AI platform must provide to its users:
+
+- **FR-1: Multimodal Interface**
+  - The system must provide a Gradio web interface supporting both a text-based chat companion and an AI Image Studio tab.
+  - The system must stream chat completions chunk-by-chunk for an interactive typewriter effect.
+  - The system must synthesize and play spoken responses synchronously alongside text streams.
+- **FR-2: Pre-flight Search Intent Classification**
+  - The system must intercept user prompts and classify whether they require live web retrieval.
+  - The classifier must output a strict JSON payload mapping query terms and target search categories (surface web, dark web, news, or images).
+- **FR-3: Multi-Engine Web Scraping**
+  - When a search is triggered, the system must scrape surface web search engines (Google, Bing, DuckDuckGo, Wikipedia) concurrently.
+  - The system must support scraping onion (`.onion`) links using a SOCKS proxy configuration over the Tor network.
+  - The system must clean, format, and merge results, citing URLs as markdown links.
+- **FR-4: Cascading Image Generation & Editing**
+  - The system must process requests containing `/imagine` tags by routing them to a 6-stage fallback cascade.
+  - If all 6 diffusion endpoints fail, the system must generate a local PIL error card indicating service unavailability.
+  - The AI Image Studio must support a 3-stage visual editing (img2img) fallback cascade, falling back to PIL image overlays if neural vision nodes fail.
+- **FR-5: History Serialization**
+  - The system must persist all conversations locally as JSON files.
+  - The system must auto-generate a 30-character chat session title dynamically from the first user message.
+
+---
+
+### 2. Non-Functional Requirements (NFR)
+
+Non-functional requirements describe system qualities, operational limits, security rules, and performance metrics:
+
+- **NFR-1: Performance & Response Latency**
+  - Pre-flight classification must complete in less than `1.0 second` using lightweight models.
+  - Time to First Token (TTFT) for text responses must remain under `1.5 seconds` on stable network connections.
+  - Audio TTS file generation must not block the asynchronous text streaming execution.
+- **NFR-2: Fault Tolerance & Availability**
+  - The image generation pipeline must have a success rate of `99.9%` through sequential cascade execution.
+  - Websocket socket errors or external TTS API failures must be caught and handled gracefully, falling back to text-only output without crashing the Gradio UI.
+- **NFR-3: Security & Input Guardrails**
+  - The FastAPI backend must inject a strict Content-Security-Policy (CSP) middleware to block inline scripts, cross-site scripting (XSS), and malicious inputs.
+  - User messages must be cleaned of executable tags, and assistant outputs sanitized before TTS processing to prevent speech-synthesized command injection.
+  - The system must prioritize the system prompt authority in LLM message schemas (`system` role precedes `user` role) to protect against prompt injection/jailbreaking.
+- **NFR-4: Scalability & Production Readiness**
+  - The system must support scaling to multiple concurrent workers using Gunicorn with Uvicorn worker threads.
+  - Nginx configuration must correctly handle reverse proxy WebSocket upgrades to maintain active user-interface tunnels.
+- **NFR-5: Observability**
+  - The application must log events in structured JSON format, with each session assigned a trace UUID.
+  - The backend must expose a Prometheus `/metrics` endpoint to monitor latencies, error frequencies, and failover cascades.
+
 ---
 
 ## 🏛️ System Architecture & Data Flow
