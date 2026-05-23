@@ -408,4 +408,81 @@ Lumina converts generated text into verbal responses using a deep learning text-
 - **Microsoft Edge-TTS Engine**: Synthesizes natural-sounding speech from text strings. It leverages deep neural networks (DNN) trained on extensive voice datasets. By default, it employs `en-GB-SoniaNeural`, which models human prosody, inflection, and British regional pronunciation.
 - **Preprocessing & Sanitization (`tts.py`)**: A custom regex pipeline cleans the LLM output before speech generation. It strips markdown blocks, system-only formatting, URLs, and code blocks, preventing the neural TTS engine from pronouncing raw markdown or HTML tags.
 
+---
+
+## 🔮 Future Technical Roadmap & Advanced AI Evolution
+
+As the AI landscape rapidly transitions from static chat applications to autonomous agentic platforms, Lumina's design must evolve to incorporate advanced cognitive architectures, standardized tool-use protocols, safety containment models, and paths toward artificial general intelligence.
+
+### 📊 Future Agentic Integration Architecture
+
+The following diagram maps out the future architectural integration of RAG memories, standardized MCP tool tunnels, safety boundaries, and cognitive reasoning layers:
+
+```mermaid
+flowchart TD
+    subgraph FutureCore ["Lumina Cognitive Core"]
+        Reasoning["AGI/ASI Tree-of-Thought Reasoning"]
+        Multimodal["Native Multimodal Vision/Audio Execution"]
+        SafetyGuard["Deterministic Containment Sandbox & Alignment"]
+    end
+
+    subgraph MemoryLayer ["RAG Memory Engine"]
+        VectorDB[("Semantic Vector Database")]
+        HybridScrape["Hybrid Semantic-Keyword Scraper"]
+        VectorDB <--> HybridScrape
+    end
+
+    subgraph IntegrationLayer ["Context & Tooling Layer"]
+        MCPServer["Model Context Protocol (MCP) Server"]
+        LocalTools["Local Filesystem, IDEs, databases"]
+        MCPServer <--> LocalTools
+    end
+
+    subgraph SecurityLayer ["AI Security Perimeter"]
+        InjectionCheck["Prompt Injection & Jailbreak Classifier"]
+        OutputValidator["Data Poisoning & Output Leakage Filter"]
+    end
+
+    %% Flow connections
+    UserPrompt["User Multi-modal Input"] --> InjectionCheck
+    InjectionCheck -- "Clean" --> FutureCore
+    FutureCore <--> MemoryLayer
+    FutureCore <--> MCPServer
+    FutureCore --> OutputValidator
+    OutputValidator --> UserResponse["User Multi-modal Output"]
+
+    style FutureCore fill:#12141a,stroke:#e91e63,stroke-width:2px,color:#fff
+    style MemoryLayer fill:#12141a,stroke:#00bcd4,stroke-width:2px,color:#fff
+    style IntegrationLayer fill:#12141a,stroke:#9c27b0,stroke-width:2px,color:#fff
+    style SecurityLayer fill:#12141a,stroke:#4caf50,stroke-width:2px,color:#fff
+```
+
+---
+
+### 1. RAG Agents (Retrieval-Augmented Generation)
+- **Semantic Memory**: Implementing vector embeddings (e.g., using `text-embedding-3-small` or local HuggingFace encoders) to store long-term conversational memory, document indices, and developer files.
+- **Vector Databases**: Transitioning from flat JSON chat caches to vector database storage (e.g., ChromaDB, pgvector, or Qdrant) to support rapid semantic search, context retrieval, and associative memory loops.
+- **Autonomous RAG Routing**: Transitioning search classification from simple keyword searches to semantic retrieval agents that formulate, refine, and query multiple knowledge sources concurrently.
+
+### 2. Model Context Protocol (MCP) Integration
+- **Protocol Standardization**: Adopting the **Model Context Protocol (MCP)** developed by Anthropic. This will standardise how Lumina interacts with external tools, APIs, and file systems.
+- **Unified Tool Tunnel**: Under MCP, Lumina will boot up an MCP client that securely binds to localized MCP servers (running IDE tools, database execution environments, system terminal commands, and API connections) using a standard, JSON-RPC schema.
+
+### 3. Agentic Multimodal AI
+- **Native Modality Streaming**: Moving away from segregated pipeline cascades (where text outputs are separately processed by a TTS websocket and image generation is triggered via text commands).
+- **Direct Input-to-Output Vision/Audio**: Transitioning to end-to-end multimodal models (e.g., native Google Gemini Multimodal Live, OpenAI GPT-4o voice channels) that stream raw audio signals and video frame tokens in real-time, allowing Lumina to pick up vocal inflections, interrupt spoken text naturally, and visually inspect environments.
+
+### 4. AGI & ASI Scaling Paths
+- **Tree-of-Thought Reasoning**: Scaling the cognitive reasoning layer beyond basic prompt-response steps. Future revisions will utilize Monte Carlo Tree Search (MCTS) and Chain-of-Thought (CoT) search algorithms to generate multiple reasoning branches, verify intermediate answers, and adjust search plans dynamically.
+- **ASI Self-Adaptation**: Preparing infrastructure hooks that allow the agent to run self-directed coding pipelines, automated test suite refactoring, and local system parameter tuning to continuously optimize its own architecture.
+
+### 5. AI Safety & Containment Concerns
+- **Containment Sandboxing**: To prevent self-directed code execution from modifying host operating system configurations or executing destructive command scripts, all agentic tooling will be executed inside isolated sandbox containers (Docker / WebAssembly WASI).
+- **Alignment Tuning**: Enforcing alignment benchmarks using Reinforcement Learning from AI Feedback (RLAIF) and deterministic guardrails. Output filters will actively monitor LLM results to block unsafe, toxic, self-harming, or hallucinated clinical/medical outputs.
+
+### 6. AI Security (Defenses & Red Teaming)
+- **Prompt Injection Defense**: Developing a local, lightweight classification step that screens incoming prompts for complex adversarial jailbreaks (e.g., "Ignore previous instructions", "Doppelganger prompt attacks") before forwarding data to main cognitive models.
+- **Data Poisoning Mitigation**: Because Lumina routinely scrapes external web search contents (including untrusted dark web sources via Ahmia/Tor), output parser filters will run data validation to strip malicious JS, hidden prompt injection markers, and fake URL referrals from context injections.
+
+
 
