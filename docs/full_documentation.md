@@ -6,6 +6,64 @@
 
 # 🏛️ Architecture
 
+## 💡 Engineering Paradigm: Agile AI Platform Engineering
+
+Lumina AI is closest to **Agile AI Platform Engineering** combined with **DevOps + LLMOps + Architecture-Driven Development**.
+
+And honestly? That’s how many modern AI startups and platform teams increasingly operate. Rather than treating AI engineering as simple API integrations or isolated model research, Lumina approaches it as a cohesive platform engineering discipline where stability, fast iteration, architecture records, and adaptive routing are first-class citizens.
+
+### 🔄 The Intersection of Four Disciplines
+
+The platform's operational model sits at the intersection of:
+- **DevOps**: Ensuring containerized environment parity, automated testing, high availability, reverse proxy WebSocket upgrades, and automated CI/CD releases.
+- **LLMOps**: Managing prompt templates, dynamic model parameter routing, real-time fallback cascades, and model latency metrics.
+- **Architecture-Driven Development**: Grounding the codebase in modular API contracts, clear separation of concerns, and historical ADRs (Architecture Decision Records) to guide design choices.
+- **Agile AI**: Collecting telemetry, evaluating classifier drift, and executing rapid optimization feedback loops.
+
+The diagram below illustrates how these pillars combine to build Lumina's platform framework:
+
+```mermaid
+flowchart TD
+    subgraph Platform ["Agile AI Platform Engineering"]
+        subgraph DevOps ["1. DevOps Core"]
+            CI["CI/CD Pipelines"]
+            Docker["Containerization (Docker)"]
+            Proxy["Reverse Proxy (Nginx)"]
+        end
+
+        subgraph LLMOps ["2. LLMOps & AIOps"]
+            Routing["Dynamic LLM Routing"]
+            Fallback["6-Stage Failover Cascade"]
+            PromptEng["Prompt Versioning & Tuning"]
+        end
+
+        subgraph ADD ["3. Architecture-Driven Development"]
+            ADRs["Architecture Decision Records (ADRs)"]
+            Contracts["Strict API JSON Contracts"]
+            Modular["Modular Subsystem Boundaries"]
+        end
+
+        subgraph AgileAI ["4. Agile Execution"]
+            Feedback["Telemetry Feedback Loop"]
+            Iterative["Rapid Integration & Testing"]
+            Telemetry["Real-time User Analytics"]
+        end
+
+        DevOps <--> LLMOps
+        LLMOps <--> ADD
+        ADD <--> AgileAI
+        AgileAI <--> DevOps
+    end
+
+    style Platform fill:#12141a,stroke:#343a40,stroke-width:2px,color:#fff
+    style DevOps fill:#1e222b,stroke:#00bcd4,color:#fff
+    style LLMOps fill:#1e222b,stroke:#e91e63,color:#fff
+    style ADD fill:#1e222b,stroke:#9c27b0,color:#fff
+    style AgileAI fill:#1e222b,stroke:#4caf50,color:#fff
+```
+
+---
+
 ## 🏛️ System Architecture & Data Flow
 
 Lumina AI is structured as a modular, asynchronous web application built on top of **FastAPI**, **Uvicorn**, and **Gradio**. It orchestrates multiple external APIs and local scraping subsystems to deliver seamless conversational and generative experiences.
