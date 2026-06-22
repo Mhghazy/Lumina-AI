@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/Mhghazy/Lumina-AI/actions/workflows/ci.yml/badge.svg)
 
-Lumina AI is a highly sophisticated, multi-modal AI virtual companion and assistant. Operating within a modern, asynchronous Gradio interface, she combines state-of-the-art LLMs, real-time British speech synthesis, multi-engine surface and dark web research, and a 6-stage fault-tolerant image generation pipeline.
+Lumina AI is an advanced, multi-modal artificial intelligence virtual companion and assistant. Operating within a modern, asynchronous Gradio interface, the system combines state-of-the-art Large Language Models, real-time British speech synthesis, comprehensive surface web research capabilities, and a highly reliable 6-stage fault-tolerant image generation pipeline.
 
 Lumina is designed as an engaging polymath—possessing deep expertise in computer science, physics, biology, and medicine, coupled with a witty, British personality and strong emotional intelligence.
 
@@ -23,7 +23,7 @@ Lumina AI leverages a modern, highly asynchronous Python ecosystem:
 - **Server Framework**: [FastAPI](https://fastapi.tiangolo.com/), [Uvicorn](https://www.uvicorn.org/), and [Starlette Middleware](https://www.starlette.io/) for permissive CSP configuration.
 - **Core LLM Processing**: [Groq SDK](https://github.com/groq/groq-python) (Llama 3.3 70B & 3.1 8B) & [OpenAI SDK](https://github.com/openai/openai-python) (routing to Google's Gemma 4 31B API gateway).
 - **Speech Synthesis**: [Edge TTS](https://github.com/rany2/edge-tts) for real-time high-quality British female voice generation.
-- **Web & Dark Web Indexing**: Programmatic BeautifulSoup4 parser, DDGS scraper, Google Search, Tor clearweb gateway scraper (Ahmia/Torch), and Wikipedia client.
+- **Web Indexing**: Programmatic BeautifulSoup4 parser, DuckDuckGo Search (DDGS) scraper, Google Search, and Wikipedia client.
 - **Cascading Image Engine**: Together API, Vertex AI / Google Generative AI API (Imagen 4 & Gemini), Craiyon API, and AI Horde cluster client with a local Pillow (PIL) canvas fallback.
 
 > [!NOTE]
@@ -44,7 +44,7 @@ Lumina dynamically adapts her behavior, model choices, temperatures, and context
 ### 🌐 2. Multi-Engine Real-Time Web Search
 If internet access is toggled, a pre-flight classifier determines if your query requires external data. Lumina scrapes, deduplicates, and synthesizes live results from multiple engines:
 *   **Surface Web**: Google Search, Bing Web, DuckDuckGo, and Wikipedia.
-*   **Tor network**: Ahmia.fi index (with Tor-accessible Onion link delivery) and Torch fallback.
+
 *   **Rich Media Embedding**: Automatically injects image and video results as formatted markdown grids directly into the chat flow.
 
 ### 🎨 3. 6-Stage Fault-Tolerant Image Generation

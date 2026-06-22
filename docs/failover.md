@@ -17,7 +17,7 @@ If all 6 providers fail, the system **never crashes**. Instead, it generates a f
 
 ### Audio and Search Failovers
 - **TTS**: Handled via `edge-tts`. If the websocket connection to Microsoft drops, the `TTS_TIMEOUT_SECONDS` config catches the timeout, safely suppressing the error so the text response still renders for the user.
-- **Search Engine Scrapers**: If `googlesearch-python` triggers a 429 Rate Limit, Lumina automatically falls back to DuckDuckGo (`ddgs`), and subsequently Wikipedia. For Dark Web searches, it attempts Ahmia first, and falls back to Torch if `.onion` indexing is blocked.
+- **Search Engine Scrapers**: Should the `googlesearch-python` module encounter a 429 Rate Limit error, the system automatically falls back to the DuckDuckGo scraper (`ddgs`), and subsequently to Wikipedia as a final web search alternative.
 
 ---
 ## 🌌 Distributed Image Pipeline

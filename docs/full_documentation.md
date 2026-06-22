@@ -128,10 +128,9 @@ Functional requirements define the core capabilities and services that the Lumin
   - The system must synthesize and play spoken responses synchronously alongside text streams.
 - **FR-2: Pre-flight Search Intent Classification**
   - The system must intercept user prompts and classify whether they require live web retrieval.
-  - The classifier must output a strict JSON payload mapping query terms and target search categories (surface web, dark web, news, or images).
+  - The classifier must output a strict JSON payload mapping query terms to target search categories (e.g., surface web, news, or images).
 - **FR-3: Multi-Engine Web Scraping**
   - When a search is triggered, the system must scrape surface web search engines (Google, Bing, DuckDuckGo, Wikipedia) concurrently.
-  - The system must support scraping onion (`.onion`) links using a SOCKS proxy configuration over the Tor network.
   - The system must clean, format, and merge results, citing URLs as markdown links.
 - **FR-4: Cascading Image Generation & Editing**
   - The system must process requests containing `/imagine` tags by routing them to a 6-stage fallback cascade.
@@ -204,7 +203,6 @@ flowchart TD
         Bing[Bing Web Scraper]
         DDG[DuckDuckGo DDGS]
         Wiki[Wikipedia API]
-        Ahmia[Ahmia / Torch Dark Web]
     end
 
     subgraph ImageSubsystem [lumina/image/engine.py 6-Stage Image Pipeline]
@@ -289,7 +287,7 @@ flowchart LR
     UC4 --> Lumina
     
     Lumina --> BUC1(🔍 Classify Search Intent)
-    Lumina --> BUC2(🌐 Scrape Surface/Dark Web)
+    Lumina --> BUC2(🌐 Scrape Surface Web)
     Lumina --> BUC4(🖼️ Cascade Image Generation)
     Lumina --> BUC5(🗣️ Synthesize Speech)
     Lumina --> BUC6(💾 Cache Artifacts to Disk)
@@ -488,7 +486,7 @@ flowchart TD
 
 ### 6. AI Security (Defenses & Red Teaming)
 - **Prompt Injection Defense**: Developing a local, lightweight classification step that screens incoming prompts for complex adversarial jailbreaks (e.g., "Ignore previous instructions", "Doppelganger prompt attacks") before forwarding data to main cognitive models.
-- **Data Poisoning Mitigation**: Because Lumina routinely scrapes external web search contents (including untrusted dark web sources via Ahmia/Tor), output parser filters will run data validation to strip malicious JS, hidden prompt injection markers, and fake URL referrals from context injections.
+- **Data Poisoning Mitigation**: Because the system routinely scrapes external web search contents, output parser filters must execute rigorous data validation to strip malicious JavaScript, hidden prompt injection markers, and deceptive URL referrals from context injections.
 
 ---
 
@@ -677,7 +675,7 @@ The goals of the LLM routing architecture are:
 Before a user's message is ever sent to the main response LLM, it is intercepted by a pre-flight classifier.
 
 #### Purpose
-The classifier's sole responsibility is determining if the user's prompt requires external data retrieval (e.g., searching the surface web, dark web, or retrieving images/videos).
+The classifier's primary responsibility is determining whether the user's prompt necessitates external data retrieval, such as executing surface web searches or retrieving multimedia content (images and videos).
 
 #### Implementation Details
 - **Function**: `classify_search_need(message, past_history, brain_state)`
@@ -871,7 +869,7 @@ If all 6 providers fail, the system **never crashes**. Instead, it generates a f
 
 ### Audio and Search Failovers
 - **TTS**: Handled via `edge-tts`. If the websocket connection to Microsoft drops, the `TTS_TIMEOUT_SECONDS` config catches the timeout, safely suppressing the error so the text response still renders for the user.
-- **Search Engine Scrapers**: If `googlesearch-python` triggers a 429 Rate Limit, Lumina automatically falls back to DuckDuckGo (`ddgs`), and subsequently Wikipedia. For Dark Web searches, it attempts Ahmia first, and falls back to Torch if `.onion` indexing is blocked.
+- **Search Engine Scrapers**: Should the `googlesearch-python` module encounter a 429 Rate Limit error, the system automatically falls back to the DuckDuckGo scraper (`ddgs`), and subsequently to Wikipedia as a final web search alternative.
 
 ---
 ## 🌌 Distributed Image Pipeline
@@ -1021,7 +1019,7 @@ Lumina-AI/
     │   └── classifier.py            # Pre-flight search intent classifier
     ├── search/
     │   ├── __init__.py
-    │   └── scraper.py               # Multi-engine search (Google, Bing, DDG, Wiki, Ahmia, Tor)
+    │   └── scraper.py               # Multi-engine search (Google, Bing, DDG, Wiki)
     ├── image/
     │   ├── __init__.py
     │   └── engine.py                # 6-stage image generation + 3-stage image editing
@@ -1171,9 +1169,6 @@ The largest module in the project. Exports `perform_search()`, `format_images_fo
 | Bing | `search_bing()` | BeautifulSoup scrape on `bing.com/search` | text |
 | DuckDuckGo | `search_duckduckgo()` | `ddgs` / `duckduckgo_search` | text, images, videos, news |
 | Wikipedia | `search_wikipedia()` | `wikipedia` library | text |
-| Ahmia (dark web) | `search_ahmia()` | BeautifulSoup scrape on `ahmia.fi` | text (onion URLs) |
-| Torch (dark web fallback) | `_scrape_torch()` | BeautifulSoup scrape on `torchdarkweb.com` | text |
-| Tor Direct | `search_onion_direct()` | SOCKS proxy through Tor | text (direct .onion fetch) |
 
 **`perform_search(query, engines=None, search_type="text")`**
 - Runs selected engines in sequence (not parallel).
@@ -1184,11 +1179,7 @@ The largest module in the project. Exports `perform_search()`, `format_images_fo
 **`format_images_for_chat(results)` / `format_videos_for_chat(results)`**
 - Generate markdown strings for embedding images and videos directly in chat responses.
 
-**Tor support:**
-- Attempts SOCKS5 proxies on ports 9150 (Tor Browser) and 9050 (Tor daemon).
-- Configurable via `TOR_SOCKS_PROXY` or `TOR_PROXY` environment variables.
-
-**Instructions:** Requires `requests[socks]` (PySocks) for Tor features. Search engines are toggled from the UI.
+**Instructions:** Search engines are toggled from the UI.
 
 ---
 
@@ -1403,7 +1394,6 @@ cd Lumina-AI
 python -m venv .venv
 .venv\Scripts\activate      # Windows
 pip install -r requirements.txt
-pip install requests[socks]  # Optional: for Tor/.onion support
 ```
 
 ### Configuration
@@ -1449,7 +1439,7 @@ uvicorn==0.46.0          → ASGI server
 | Subsystem | Primary Technologies | Core Capabilities |
 | :--- | :--- | :--- |
 | **Conversational AI** | Groq Llama 3.3 / Google Gemma 4 | 5 distinct persona modes, emotional intelligence switching, autonomous prompt generation, and dynamic dialect switching based on TTS accent. |
-| **Web Research** | BeautifulSoup, DDGS, Google/Wiki APIs | Surface web scraping, Tor dark web indexing (`ahmia.fi`), automatic deduplication, rich markdown media embedding. |
+| **Web Research** | BeautifulSoup, DDGS, Google/Wiki APIs | Surface web scraping, automatic deduplication, rich markdown media embedding. |
 | **Image Generation** | Pollinations, Together FLUX, Craiyon v3, Google Imagen, Gemini Flash, AI Horde | 6-stage fault-tolerant failover, Cloudflare WAF evasion, lazy-generation retry loops, PIL integrity verification, fail-safe error cards. |
 | **Speech Synthesis** | Edge TTS | 24+ regional accents, inline chat HTML play buttons, on-the-fly text/HTML sanitization, asynchronous caching, Windows socket error suppression. |
 | **Security & Server** | FastAPI, Uvicorn, Starlette Middleware | Permissive Content-Security-Policy injection, robust relative path handling for static files, environment variable management, and comprehensive error handling. |

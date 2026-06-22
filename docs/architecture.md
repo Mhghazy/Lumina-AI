@@ -122,10 +122,9 @@ Functional requirements define the core capabilities and services that the Lumin
   - The system must synthesize and play spoken responses synchronously alongside text streams.
 - **FR-2: Pre-flight Search Intent Classification**
   - The system must intercept user prompts and classify whether they require live web retrieval.
-  - The classifier must output a strict JSON payload mapping query terms and target search categories (surface web, dark web, news, or images).
+  - The classifier must output a strict JSON payload mapping query terms to target search categories (e.g., surface web, news, or images).
 - **FR-3: Multi-Engine Web Scraping**
   - When a search is triggered, the system must scrape surface web search engines (Google, Bing, DuckDuckGo, Wikipedia) concurrently.
-  - The system must support scraping onion (`.onion`) links using a SOCKS proxy configuration over the Tor network.
   - The system must clean, format, and merge results, citing URLs as markdown links.
 - **FR-4: Cascading Image Generation & Editing**
   - The system must process requests containing `/imagine` tags by routing them to a 6-stage fallback cascade.
@@ -198,7 +197,6 @@ flowchart TD
         Bing[Bing Web Scraper]
         DDG[DuckDuckGo DDGS]
         Wiki[Wikipedia API]
-        Ahmia[Ahmia / Torch Dark Web]
     end
 
     subgraph ImageSubsystem [lumina/image/engine.py 6-Stage Image Pipeline]
@@ -283,7 +281,7 @@ flowchart LR
     UC4 --> Lumina
     
     Lumina --> BUC1(🔍 Classify Search Intent)
-    Lumina --> BUC2(🌐 Scrape Surface/Dark Web)
+    Lumina --> BUC2(🌐 Scrape Surface Web)
     Lumina --> BUC4(🖼️ Cascade Image Generation)
     Lumina --> BUC5(🗣️ Synthesize Speech)
     Lumina --> BUC6(💾 Cache Artifacts to Disk)
@@ -482,7 +480,7 @@ flowchart TD
 
 ### 6. AI Security (Defenses & Red Teaming)
 - **Prompt Injection Defense**: Developing a local, lightweight classification step that screens incoming prompts for complex adversarial jailbreaks (e.g., "Ignore previous instructions", "Doppelganger prompt attacks") before forwarding data to main cognitive models.
-- **Data Poisoning Mitigation**: Because Lumina routinely scrapes external web search contents (including untrusted dark web sources via Ahmia/Tor), output parser filters will run data validation to strip malicious JS, hidden prompt injection markers, and fake URL referrals from context injections.
+- **Data Poisoning Mitigation**: Because the system routinely scrapes external web search contents, output parser filters must execute rigorous data validation to strip malicious JavaScript, hidden prompt injection markers, and deceptive URL referrals from context injections.
 
 
 

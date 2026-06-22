@@ -32,7 +32,7 @@ Lumina-AI/
     │   └── classifier.py            # Pre-flight search intent classifier
     ├── search/
     │   ├── __init__.py
-    │   └── scraper.py               # Multi-engine search (Google, Bing, DDG, Wiki, Ahmia, Tor)
+    │   └── scraper.py               # Multi-engine search (Google, Bing, DDG, Wiki)
     ├── image/
     │   ├── __init__.py
     │   └── engine.py                # 6-stage image generation + 3-stage image editing
@@ -182,9 +182,6 @@ The largest module in the project. Exports `perform_search()`, `format_images_fo
 | Bing | `search_bing()` | BeautifulSoup scrape on `bing.com/search` | text |
 | DuckDuckGo | `search_duckduckgo()` | `ddgs` / `duckduckgo_search` | text, images, videos, news |
 | Wikipedia | `search_wikipedia()` | `wikipedia` library | text |
-| Ahmia (dark web) | `search_ahmia()` | BeautifulSoup scrape on `ahmia.fi` | text (onion URLs) |
-| Torch (dark web fallback) | `_scrape_torch()` | BeautifulSoup scrape on `torchdarkweb.com` | text |
-| Tor Direct | `search_onion_direct()` | SOCKS proxy through Tor | text (direct .onion fetch) |
 
 **`perform_search(query, engines=None, search_type="text")`**
 - Runs selected engines in sequence (not parallel).
@@ -195,11 +192,7 @@ The largest module in the project. Exports `perform_search()`, `format_images_fo
 **`format_images_for_chat(results)` / `format_videos_for_chat(results)`**
 - Generate markdown strings for embedding images and videos directly in chat responses.
 
-**Tor support:**
-- Attempts SOCKS5 proxies on ports 9150 (Tor Browser) and 9050 (Tor daemon).
-- Configurable via `TOR_SOCKS_PROXY` or `TOR_PROXY` environment variables.
-
-**Instructions:** Requires `requests[socks]` (PySocks) for Tor features. Search engines are toggled from the UI.
+**Instructions:** Search engines are toggled from the UI.
 
 ---
 
@@ -414,7 +407,6 @@ cd Lumina-AI
 python -m venv .venv
 .venv\Scripts\activate      # Windows
 pip install -r requirements.txt
-pip install requests[socks]  # Optional: for Tor/.onion support
 ```
 
 ### Configuration
@@ -460,7 +452,7 @@ uvicorn==0.46.0          → ASGI server
 | Subsystem | Primary Technologies | Core Capabilities |
 | :--- | :--- | :--- |
 | **Conversational AI** | Groq Llama 3.3 / Google Gemma 4 | 5 distinct persona modes, emotional intelligence switching, autonomous prompt generation, and dynamic dialect switching based on TTS accent. |
-| **Web Research** | BeautifulSoup, DDGS, Google/Wiki APIs | Surface web scraping, Tor dark web indexing (`ahmia.fi`), automatic deduplication, rich markdown media embedding. |
+| **Web Research** | BeautifulSoup, DDGS, Google/Wiki APIs | Surface web scraping, automatic deduplication, rich markdown media embedding. |
 | **Image Generation** | Pollinations, Together FLUX, Craiyon v3, Google Imagen, Gemini Flash, AI Horde | 6-stage fault-tolerant failover, Cloudflare WAF evasion, lazy-generation retry loops, PIL integrity verification, fail-safe error cards. |
 | **Speech Synthesis** | Edge TTS | 24+ regional accents, inline chat HTML play buttons, on-the-fly text/HTML sanitization, asynchronous caching, Windows socket error suppression. |
 | **Security & Server** | FastAPI, Uvicorn, Starlette Middleware | Permissive Content-Security-Policy injection, robust relative path handling for static files, environment variable management, and comprehensive error handling. |

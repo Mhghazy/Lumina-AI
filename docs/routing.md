@@ -16,7 +16,7 @@ The goals of the LLM routing architecture are:
 Before a user's message is ever sent to the main response LLM, it is intercepted by a pre-flight classifier.
 
 #### Purpose
-The classifier's sole responsibility is determining if the user's prompt requires external data retrieval (e.g., searching the surface web, dark web, or retrieving images/videos).
+The classifier's primary responsibility is determining whether the user's prompt necessitates external data retrieval, such as executing surface web searches or retrieving multimedia content (images and videos).
 
 #### Implementation Details
 - **Function**: `classify_search_need(message, past_history, brain_state)`
