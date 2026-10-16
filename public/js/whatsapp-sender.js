@@ -43,11 +43,10 @@ async function ensureSenderClient() {
                     name: 'System Sender',
                     phone: senderPhone,
                     company: 'System',
-                    category: 'Sender',
+                    category: 'Others',
                     email: 'sender@system.com',
                     website: '',
-                    registration_date: new Date().toISOString().split('T')[0],
-                    created_at: new Date().toISOString()
+                    registration_date: new Date().toISOString().split('T')[0]
                 }
             ]);
 
