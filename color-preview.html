@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color System Preview - I.T.S-Group</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #7f8c8d;
+      margin-bottom: 40px;
+      font-size: 1.1em;
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 1.5em;
+      color: #34495e;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #3498db;
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .color-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .color-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .color-preview {
+      width: 100%;
+      height: 80px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+      border: 2px solid #e0e0e0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .color-preview.light {
+      border: 2px solid #555;
+    }
+
+    .color-info {
+      text-align: center;
+    }
+
+    .color-name {
+      font-size: 1.2em;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+
+    .color-hex {
+      font-family: 'Courier New', monospace;
+      color: #7f8c8d;
+      font-size: 0.9em;
+      background: #ecf0f1;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .color-square-demo {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      margin-right: 8px;
+      vertical-align: middle;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      border: 1px solid rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .color-square-demo:hover {
+      transform: scale(1.3);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    .demo-section {
+      background: #2c3e50;
+      padding: 30px;
+      border-radius: 12px;
+      margin-top: 30px;
+    }
+
+    .demo-title {
+      color: #ecf0f1;
+      font-size: 1.3em;
+      margin-bottom: 20px;
+    }
+
+    .demo-row {
+      background: #34495e;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      color: #ecf0f1;
+      font-size: 1.1em;
+      display: flex;
+      align-items: center;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+
+    .stat-number {
+      font-size: 3em;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .stat-label {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
+    .emoji {
+      font-size: 1.5em;
+      margin-right: 10px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #ecf0f1;
+      color: #7f8c8d;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 Enhanced Color System</h1>
+    <p class="subtitle">I.T.S-Group Vendors Management - 40+ Colors Available</p>
+
+    <!-- Statistics -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-number">40+</div>
+        <div class="stat-label">Total Colors</div>
+      </div>
+      <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+        <div class="stat-number">26</div>
+        <div class="stat-label">Dropdown Options</div>
+      </div>
+      <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+        <div class="stat-number">100%</div>
+        <div class="stat-label">Visual Preview</div>
+      </div>
+    </div>
+
+    <!-- Primary Colors -->
+    <div class="section">
+      <h2 class="section-title">🌈 Primary Colors</h2>
+      <div class="color-grid">
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #FF0000;"></div>
+          <div class="color-info">
+            <div class="color-name">🔴 Red</div>
+            <div class="color-hex">#FF0000</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #FF6600;"></div>
+          <div class="color-info">
+            <div class="color-name">🟠 Orange</div>
+            <div class="color-hex">#FF6600</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview light" style="background-color: #FFFF00;"></div>
+          <div class="color-info">
+            <div class="color-name">🟡 Yellow</div>
+            <div class="color-hex">#FFFF00</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #00FF00;"></div>
+          <div class="color-info">
+            <div class="color-name">🟢 Green</div>
+            <div class="color-hex">#00FF00</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #0000FF;"></div>
+          <div class="color-info">
+            <div class="color-name">🔵 Blue</div>
+            <div class="color-hex">#0000FF</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #800080;"></div>
+          <div class="color-info">
+            <div class="color-name">🟣 Purple</div>
+            <div class="color-hex">#800080</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary Colors -->
+    <div class="section">
+      <h2 class="section-title">✨ Secondary & Popular Colors</h2>
+      <div class="color-grid">
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #FF69B4;"></div>
+          <div class="color-info">
+            <div class="color-name">🌸 Pink</div>
+            <div class="color-hex">#FF69B4</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #8B4513;"></div>
+          <div class="color-info">
+            <div class="color-name">🟤 Brown</div>
+            <div class="color-hex">#8B4513</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #000000;"></div>
+          <div class="color-info">
+            <div class="color-name">⚫ Black</div>
+            <div class="color-hex">#000000</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview light" style="background-color: #FFFFFF;"></div>
+          <div class="color-info">
+            <div class="color-name">⚪ White</div>
+            <div class="color-hex">#FFFFFF</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #808080;"></div>
+          <div class="color-info">
+            <div class="color-name">⚫ Gray</div>
+            <div class="color-hex">#808080</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #FFD700;"></div>
+          <div class="color-info">
+            <div class="color-name">🟡 Gold</div>
+            <div class="color-hex">#FFD700</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Blue Shades -->
+    <div class="section">
+      <h2 class="section-title">🔵 Blue Family</h2>
+      <div class="color-grid">
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #000080;"></div>
+          <div class="color-info">
+            <div class="color-name">Navy</div>
+            <div class="color-hex">#000080</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #008080;"></div>
+          <div class="color-info">
+            <div class="color-name">Teal</div>
+            <div class="color-hex">#008080</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #00FFFF;"></div>
+          <div class="color-info">
+            <div class="color-name">Cyan</div>
+            <div class="color-hex">#00FFFF</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #4B0082;"></div>
+          <div class="color-info">
+            <div class="color-name">Indigo</div>
+            <div class="color-hex">#4B0082</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #40E0D0;"></div>
+          <div class="color-info">
+            <div class="color-name">Turquoise</div>
+            <div class="color-hex">#40E0D0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Purple/Pink Shades -->
+    <div class="section">
+      <h2 class="section-title">🟣 Purple & Pink Family</h2>
+      <div class="color-grid">
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #FF00FF;"></div>
+          <div class="color-info">
+            <div class="color-name">Magenta</div>
+            <div class="color-hex">#FF00FF</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #EE82EE;"></div>
+          <div class="color-info">
+            <div class="color-name">Violet</div>
+            <div class="color-hex">#EE82EE</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview light" style="background-color: #E6E6FA;"></div>
+          <div class="color-info">
+            <div class="color-name">Lavender</div>
+            <div class="color-hex">#E6E6FA</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-preview" style="background-color: #FF007F;"></div>
+          <div class="color-info">
+            <div class="color-name">Rose</div>
+            <div class="color-hex">#FF007F</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo Section -->
+    <div class="demo-section">
+      <h3 class="demo-title">📊 Color Squares in Action (Table Preview)</h3>
+      <div class="demo-row">
+        <span class="color-square-demo" style="background-color: #FF0000;"></span>
+        <span>Red - Ferrari Color</span>
+      </div>
+      <div class="demo-row">
+        <span class="color-square-demo" style="background-color: #FF6600;"></span>
+        <span>Orange - Sunset Orange</span>
+      </div>
+      <div class="demo-row">
+        <span class="color-square-demo" style="background-color: #0000FF;"></span>
+        <span>Blue - Ocean Blue</span>
+      </div>
+      <div class="demo-row">
+        <span class="color-square-demo" style="background-color: #800080; border: 1px solid #555;"></span>
+        <span>Purple - Royal Purple</span>
+      </div>
+      <div class="demo-row">
+        <span class="color-square-demo" style="background-color: #FFFFFF; border: 1px solid #555;"></span>
+        <span>White - Pure White (with border for visibility)</span>
+      </div>
+      <div class="demo-row">
+        <span class="color-square-demo" style="background-color: #000000;"></span>
+        <span>Black - Carbon Black</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>🎨 Color System Version 2.0</strong></p>
+      <p>40+ colors with automatic hex conversion and visual previews</p>
+      <p style="margin-top: 10px; font-size: 0.9em;">I.T.S-Group Vendors Management System</p>
+    </div>
+  </div>
+</body>
+</html>
